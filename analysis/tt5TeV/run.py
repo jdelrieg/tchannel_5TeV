@@ -16,7 +16,7 @@ from coffea.util import load, save
 from coffea.nanoevents import NanoAODSchema
 
 #import tt5TeV
-import tchannel5TeV_wjets
+import tchannel5TeV_eta3_loose
 from cafea.modules import samples
 from cafea.modules import fileReader
 
@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
   if dotest:
     nchunks = 1 #2
-    chunksize = 10000
+    chunksize = 1000
     nworkers = 1
     print('Running a fast test with %i workers, %i chunks of %i events'%(nworkers, nchunks, chunksize))
 
@@ -192,15 +192,29 @@ if __name__ == '__main__':
     model3='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/training_several/better3.pkl' 
     model4='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/training_several/better4.pkl' 
     model5='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/training_several/better5.pkl' 
+    
+    modelcheck='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/safecheck/training/safecheck.pkl' 
+    modelcheck_old='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/safecheck/training/safecheck_oldsamples.pkl'
+    prueba='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/safecheck/training/prueba_1.pkl'
 
     pathModels = [model1, model2]																#ESTA linea es la que vale cuando me quede con uno (en ppio definitivo era el mejor)
-    pathModels = [modela,modelb,modelc,modeld,modele,modelf,model2,model3,model4,model5]        #ESTA linea es para testear todas las diferentes combinaciones de variables
+    pathModels = [modelcheck,modelcheck_old,modelc,modeld,modele,modelf,model2,model3,model4,model5,modela,modelb,prueba]        #ESTA linea es para testear todas las diferentes combinaciones de variables
     
-    modelloosecuts1='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/var_pruned.pkl' 
-    modelloosecuts2='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/var_pruned_bibkg.pkl' 
-    modelloosecuts3='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/best6.pkl' 
-    
+    modelloosecuts1='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/all_vars.pkl' 
+    modelloosecuts2='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/varspruned.pkl' 
+    #modelloosecuts2='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/var_pruned_bibkg.pkl' 
+    modelloosecuts3='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/best7.pkl' 
+   
     pathModels = [modelloosecuts1,modelloosecuts2,modelloosecuts3]     											#ESTA linea para testear lo de tX meeting de relajar cortes y meter esas vars como input al mva
+
+    modeleta1='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/eta3loose/training/all.pkl' 
+    modeleta2='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/eta3loose/training/pruned.pkl' 
+    #modelloosecuts2='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/lesscuts/training/var_pruned_bibkg.pkl' 
+    modeleta3='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/eta3loose/training/best6.pkl' 
+    modeleta4='/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/mva/eta3loose_morevars/training/b10_besthyper.pkl' 
+
+    pathModels = [modeleta1,modeleta2,modeleta3,modeleta4]  
+    
   if pathModels is not None and isinstance(pathModels, str) and not ',' in pathModels:
     with open(pathModels, 'rb') as f:
       model = pickle.load(f)
@@ -209,7 +223,7 @@ if __name__ == '__main__':
   if isinstance(pathModels, list):
     model = [pkl.load(open(p, 'rb')) for p in pathModels]
     print('')
-  processor_instance = tchannel5TeV_wjets.AnalysisProcessor(samplesdict, model)  #donde pone tchannel5TeV poner tt5TeV para ttbar
+  processor_instance = tchannel5TeV_eta3_loose.AnalysisProcessor(samplesdict, model)  #donde pone tchannel5TeV poner tt5TeV para ttbar
   
   
 
