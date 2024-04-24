@@ -60,9 +60,21 @@ The table yields are calculated with:
 ## Datacards
 
 You need to create rootfiles and datacards to produce fits and extract the cross section.
-Rootfiles are created with `analysis/tt5TeV/SaveRootfile.py` and then, datacards are created with `analysis/tt5TeV/CreateDatacard.py`.
+Rootfiles are created with `analysis/tt5TeV/SaveRootfile.py` and then, datacards are created with `analysis/tt5TeV/CreateDatacard_v2.py`.
 A script to create all the needed rootfiles and datacards in the analysis is executed as follows:
 
-    python analysis/tt5TeV/RunCombineProducer.py -p histos5TeV/16jan2023/
+    python analysis/tt5TeV/RunCombineProducer_v2.py -p histos5TeV/16jan2023/ -o carpetasalida
 
-The uncertainties must be specified in the python `analysis/tt5TeV/CreateDatacard.py` script. The distributions are specified first in the  `analysis/tt5TeV/SaveRootfile.py` script.
+The uncertainties must be specified in the python `analysis/tt5TeV/CreateDatacard_v2.py` script. The distributions are specified first in the  `analysis/tt5TeV/SaveRootfile.py` script.
+
+## Fit
+
+It is done using CMSSW software. More precisely the scripts `fitsHelper.py` (fit result and workspace), `getInclusiveImpacts.py` (impacts plots) and `produceUncertaintyTable.py` (scan plots). For each of them the following options are needed:
+
+    -i <path with cards> -ch <channels (typically we will use 'e,m')> -r <regions (typically '2j0b,2j1b,3j1b,3j2b')> //-uD for the first, -O for the two latter if we want observed results
+
+Additionally, one can pass:
+
+    -V (for verbosity), -j n (number of cores to be used by the machine in which the script will be launched)
+
+Specifically, for the scan plots `-g -P 250` is needed
