@@ -436,8 +436,9 @@ def GetTriggerSF5TeV(eta, ch='e'):
 
 # MC efficiencies
 def GetMCeffFunc(WP='medium', year=2018, flav='b'):
-  pathToBtagMCeff = cafea_path('data/btagSF/UL/btagMCeff_%s.pkl.gz'%str(year))
-  pathToBtagMCeff = cafea_path('data/btagSF/UL/btagMCeff_2bin.pkl.gz')
+  pathToBtagMCeff = cafea_path('data/btagSF/UL/btagMCeff_%s.pkl.gz'%str(year)) #original (eta hasta 2.4)
+  pathToBtagMCeff = cafea_path('data/btagSF/UL/btagMCeff_2bin.pkl.gz')  #el que venia usando para llegar a eta 4.7 (divido en 2 bines el rango 1.8-4.7)
+  pathToBtagMCeff = cafea_path('data/btagSF/UL/btagMCeff_eta3.pkl.gz') #prueba para cortar en eta 3 (extiendo el bin de 2.4 a 3)
   hists = {}
   with gzip.open(pathToBtagMCeff) as fin:
     hin = pickle.load(fin)
@@ -471,7 +472,7 @@ def GetBTagSF(eta, pt, flavor, year=2018, sys=0):
   if   year == 2016: SFevaluatorBtag = BTagScaleFactor(cafea_path("data/btagSF/DeepFlav_2016.csv"),wplabel.upper())
   elif year == 2017: SFevaluatorBtag = BTagScaleFactor(cafea_path("data/btagSF/UL/DeepJet_UL17.csv"),wplabel.upper())
   elif year == 2018: SFevaluatorBtag = BTagScaleFactor(cafea_path("data/btagSF/UL/DeepJet_UL18.csv"),wplabel.upper())
-  elif year == '5TeV': SFevaluatorBtag = BTagScaleFactor(cafea_path("data/btagSF/DeepCSV_94XSF_V5_B_F.csv"),wplabel.upper(), 'mujets,comb,incl')
+  elif year == '5TeV': SFevaluatorBtag = BTagScaleFactor(cafea_path("data/btagSF/DeepCSV_94XSF_V5_B_F.csv"),wplabel.upper(), 'mujets,mujets,incl')
 
   if   sys==0 : SF=SFevaluatorBtag.eval("central",flavor,eta,pt)
   elif sys==1 : SF=SFevaluatorBtag.eval("up",flavor,eta,pt)
@@ -697,6 +698,7 @@ jec_names = ["Autumn18_V7_MC_SF_AK4PFchs","Autumn18_V7_MC_PtResolution_AK4PFchs"
 jec_types = ['MC', 'AbsStat', 'AbsScale', 'AbsMPF', 'Frag', 'ECAL', 'HCAL', 'Flavor', 'RelStat', 'RelPt', 'RelBal', 'RelJER', 'L3Res', 'Total']
 jec_regroup = ["Spring18_ppRef5TeV_V4_MC_UncertaintySources_AK4PFchs_%s"%(jec_type) for jec_type in jec_types]
 jec_names.extend(jec_regroup)
+
 
 jec_inputs = {name: JECevaluator[name] for name in jec_names}
 jec_stack = JECStack(jec_inputs)
