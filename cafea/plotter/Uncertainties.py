@@ -51,10 +51,18 @@ def addsyst(nominal, up, do):
   #vals = np.power(diff, 2)*np.sign(diff)
   #up = np.sqrt(np.where(vals>0, vals, 0))
   #do = np.sqrt(np.abs(np.where(vals<0, vals, 0)))
-  up = np.sum(diffup, axis=0)
-  do = np.sum(diffdo, axis=0)
-  up = nominal + up
-  do = nominal - do
+
+#  up = np.sum(diffup, axis=0)
+  squared_diffup = np.square(diffup)
+  quadratic_up = np.sum(squared_diffup, axis=0)
+  
+#  do = np.sum(diffdo, axis=0)
+  squared_diffdo = np.square(diffdo)
+  quadratic_do = np.sum(squared_diffdo, axis=0)
+#  up = nominal + up
+  up=nominal+np.sqrt(quadratic_up)
+#  do = nominal - do
+  do = nominal - np.sqrt(quadratic_do)
   return up, do
   
 def addstat(nominal, *unc, relative=False):
@@ -148,6 +156,29 @@ class UncertHisto:
       down += d   
     return up, down
 
+  def GetUnc_quad(self, process, unc, relative=False):
+    ''' Get single unc for process or processes '''
+    process = self.CheckFormatList(process)
+    up, down = self.GetUncForSingleProcess(process[0], unc)
+    nomtt1=self.GetUncForSingleProcess(process[0], 'norm')[0]
+    nomtt2=self.GetUncForSingleProcess(process[0], 'norm')[1]
+    nomtt=(nomtt1+nomtt2)/2
+    nominal=np.zeros(len(nomtt))
+    for pr in process:
+      nominal=nominal+(self.GetUncForSingleProcess(pr, 'norm')[0]+self.GetUncForSingleProcess(pr, 'norm')[1])/2
+    up=abs(up-nomtt)
+    down=abs(down-nomtt)
+    up_bis, down_bis = self.GetUncForSingleProcess(process[0], unc)
+    for pr in process[1:]:
+      u, d = self.GetUncForSingleProcess(pr, unc)
+      u=abs(u-self.GetNominal(pr))
+      d=abs(d-self.GetNominal(pr))
+      up   = np.sqrt(up**2+u**2)
+      down = np.sqrt(down**2+d**2)
+    up=nominal+up
+    down=nominal-down
+    return up, down
+    
   def GetStat(self, processes, relative=False):
     ''' Get total stat unc '''
     processes = self.CheckFormatList(processes)
@@ -165,7 +196,7 @@ class UncertHisto:
     unc = self.CheckFormatList(unc)
     up = []; down = []
     for su in unc:
-      u, d = self.GetUnc(process, su, relative)
+      u, d = self.GetUnc_quad(process, su, relative)
       up.append(self.CheckArray(u)); down.append(self.CheckArray(d))
     up, down = addsyst(self.CheckArray(self.GetNominal(process)), up, down)
     return up, down
@@ -217,6 +248,18 @@ class UncertHisto:
     normdo = nominal*(1-fact)
     self.pr[process]['norm'] = {'up':normup, 'down':normdo}
     return
+
+  def SetNormUncForProcess_2(self, process, fact):
+    ''' Set norm unc for process '''
+    process = self.CheckFormatList(process)
+    if len(process) == 1: process = process[0]
+    else:
+      for pr in process: self.SetNormUncForProcess(pr, fact)
+    nominal = self.GetNominal(process)
+    normup = nominal*(1+fact)
+    normdo = nominal*(1-fact)
+    self.pr[process]['norm'] = {'up':normup, 'down':normdo}
+    return normup,normdo
 
   def AddSyst(self, name, process, up, down=None, symmetric=False, relative=False, nominal=None):
     ''' Add new uncertainty '''

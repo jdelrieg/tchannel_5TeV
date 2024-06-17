@@ -6,6 +6,7 @@ import json
 import os, copy
 import uproot
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 import coffea
 from coffea import hist, processor
@@ -735,13 +736,13 @@ class plotter:
     self.rebin = rebin
     if var is None or rebin is None: return
     if bN is None:
-      #self.hists[var] = Rebin(self.hists[var], var, rebin)
+      self.hists[var] = Rebin(self.hists[var], var, rebin)
       print('') 
     if bN is not None:
       b0 = rebin;
       histo = self.hists[var]
       axname = [x.name for x in histo.dense_axes()]
-      #self.hists[var] = Rebin(self.hists[var], var, b0, bN, includeLower, includeUpper, binRebin)
+      self.hists[var] = Rebin(self.hists[var], var, b0, bN, includeLower, includeUpper, binRebin)
 
   def SetVerbose(self, verbose=1):
     ''' Set level of verbosity '''
@@ -1018,6 +1019,8 @@ class plotter:
   ######## Uncertainties
   def GetUncertaintiesFromHist(self, systAxisName="syst", systNomName="norm", stat=False, syst=None, hist=None, NormUncDict=None):
     ''' Get uncertainties object '''
+
+    
     if isinstance(hist, str):
       h = self.GetHistogram(hname, self.bkglist)
     else:
@@ -1025,15 +1028,53 @@ class plotter:
     self.uncertainties = UncertHisto()
     if syst is None: 
       syst = GetSystListForHisto(h, systAxisName, systNomName, stat)
+      
     #print("Uncetainty bands for these systematics: ", syst)
+########################################################################################## 
+    syst.append('normalization') #Added by hand
+    syst.append('lumi')
+    syst.append('pdfs')
+    syst.append('scales')
+    syst.append('hdamp')							#These lines are added to input manually uncs. Remove if not needed
+    syst.append('UE')
+    syst.append('stat')
+    hforstat=copy.deepcopy(h)
+    hforstat.scale(1/self.lumi*self.MCnorm)
+##########################################################################################     
     for bkg in self.bkglist:
       hb = h.integrate(self.processLabel, bkg)
       hbnom = hb.integrate(systAxisName, systNomName)
       hbnom._sumw[()]=np.where(hbnom._sumw[()]<0,0,hbnom._sumw[()])
       hbnom._sumw[()][1]=abs(hbnom._sumw[()][1])+abs(hbnom._sumw[()][0])
       hbnom._sumw[()][-3]=abs(hbnom._sumw[()][-3])+abs(hbnom._sumw[()][-2])
+      #print('syst before',syst)
 
       self.uncertainties.AddProcess(hbnom, bkg, norm = NormUncDict[bkg] if NormUncDict is not None and bkg in NormUncDict else None)
+      
+##########################							HERE WE DO MANUAL UNCS. COMMENT IF NO TYPICAL PLOTS																							#######      
+      staterrup=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][0]+np.sqrt(hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][1])      #Calculation of statistical uncs of the MC
+      staterrdo=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][0]-np.sqrt(hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][1])
+      
+      staterrup=staterrup*self.lumi*self.MCnorm
+      staterrdo=staterrdo*self.lumi*self.MCnorm
+      
+      self.uncertainties.AddSyst('stat',bkg,staterrup,staterrdo)																						 #up to here the statistical unc
+      
+      normup,normdo=self.uncertainties.SetNormUncForProcess_2(bkg,fact = NormUncDict[bkg] if NormUncDict is not None and bkg in NormUncDict else None)   #NormUncDict se mete en Stack justo antes de llamar a esta funcion
+      self.uncertainties.AddSyst('normalization',bkg,normup,normdo)
+      lumiup,lumido=self.uncertainties.SetNormUncForProcess_2(bkg,fact = 0.019)
+      self.uncertainties.AddSyst('lumi',bkg,lumiup,lumido)
+      if bkg=="tchan": #Theoretical (thus only applying on tchan)
+        pdfup,pdfdo=self.uncertainties.SetNormUncForProcess_2(bkg,fact =0.0002728 ); #e:0.0000386 #mu: 0.000507   #mean: 0.0002728
+        self.uncertainties.AddSyst('pdfs',bkg,pdfup,pdfdo)
+        scaleup,scaledo=self.uncertainties.SetNormUncForProcess_2(bkg,fact =0.001334 );#e: 0.001078   #mu: 0.00159    #mean: 0.001334
+        self.uncertainties.AddSyst('scales',bkg,scaleup,scaledo)
+        hdampup,hdampdo=self.uncertainties.SetNormUncForProcess_2(bkg,fact = 0.00621);
+        self.uncertainties.AddSyst('hdamp',bkg,hdampup,hdampdo)
+        ueup,uedo=self.uncertainties.SetNormUncForProcess_2(bkg,fact = 0.00131);
+        self.uncertainties.AddSyst('UE',bkg,ueup,uedo)
+##########################							UP TO HERE THE MANUAL UNCS																						#######            
+      
       for s in syst:
         systList = [x.name for x in list(h.identifiers(systAxisName))]
         up = None; do = None
@@ -1044,6 +1085,7 @@ class plotter:
             up._sumw[()]=np.where(up._sumw[()]<0,0,up._sumw[()])
             up._sumw[()][1]=abs(up._sumw[()][1])+abs(up._sumw[()][0])
             up._sumw[()][-3]=abs(up._sumw[()][-3])+abs(up._sumw[()][-2])
+        
         if s+'Down' in systList:
           do = hb.integrate(systAxisName, s+'Down')
           if do.values() == {}: do = None          
@@ -1407,16 +1449,18 @@ class plotter:
     if not self.yRange is None: ax.set_ylim(yRange[0],yRange[1])
 
     # Draw uncertainty bands
+    dictnorm={'tt':0.05,'tW': 0.056,'tchan': 0.0,'WJetsL': 0.2,'WJetsH':0.2,'QCD': 0.3,'DY': 0.3}
     if drawSystBand:
-      up, do = self.GetUncertaintiesFromHist(hist=hsyst, syst=self.systList, NormUncDict=self.NormUncDict)
+      up, do = self.GetUncertaintiesFromHist(hist=hsyst, syst=self.systList, NormUncDict=dictnorm)
       if self.doData(hname) and self.doRatio:
         r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, ratioax=rax, hatch="\/\/", color="gray")
       else:
         r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, hatch="\/\/", color="gray")
 
     # Labels
-    CMS  = plt.text(0., 1., r"$\bf{CMS}$ Preliminary", fontsize=25,fontfamily='TeX Gyre Heros', horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
-    lumi = plt.text(1., 1., r"%1.0f %s (%s)"%(self.lumi, self.lumiunit, self.sqrts), fontsize=20, horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
+    CMS  = plt.text(0., 1., r"$\bf{CMS}$ ", fontsize=23,fontfamily='TeX Gyre Heros', horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes) #Preliminary taba aqui 25
+    Preliminary =plt.text(0.15, 1., r"$\it{Preliminary}$", fontsize=18,fontfamily='TeX Gyre Heros', horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)         #19
+    lumi = plt.text(1., 1., r"%1.0f %s (%s)"%(self.lumi, self.lumiunit, self.sqrts), fontsize=18, horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)			#20
     for lab in self.labels:
       plt.text(lab['x'], lab['y'], lab['text'], transform=ax.transAxes, **lab['options'])
 
