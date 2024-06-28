@@ -6,7 +6,7 @@ from multiprocessing import Pool
 
 
 
-if var is None: var = "MVAscore_bi"
+if var is None: var = "MVAscore_pruned"
 
 # "path" es la variable que le damos al coso esti.
 outpath = path + "combineFiles/"
@@ -20,17 +20,17 @@ if not os.path.exists(pathcomb):
     os.makedirs(pathcomb)
 
 #levels   = ['3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
-levels   = ['2j1b','3j1b','3j2b','2j0b']
+levels   = ['2j1b','3j1b','3j2b']#,'2j0b']
 channels = ['e','m']
 #channels = ['e']
 
 def getDatacard(task):
     ch, level = task
     print("> Canal:", ch, "Nivel:", level)
-    var = "MVAscore_bi" if level not in ['2j0b'] else "u0eta" #quitar descomentar 
+    var = "MVAscore_pruned" if level not in ['2j0b'] else "u0eta" #quitar descomentar 
     outname = "%s_%s_%s.root"%(var, ch, level)
     if not os.path.exists(f"{pathcomb+outname}"):
-        command = "python analysis/tt5TeV/SaveRootfile.py -p %s -v %s -l %s -c %s --data"%(path, var, level, ch)
+        command = "python analysis/tt5TeV/SaveRootfile_conlowess.py -p %s -v %s -l %s -c %s --data"%(path, var, level, ch)
         if verbose >= 1: print("Running: %s"%(command))
         os.system(command)
 

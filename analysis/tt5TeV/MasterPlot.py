@@ -34,7 +34,7 @@ hperchan = hist.Hist("Events", hist.Cat("process", "process"), hist.Cat('syst', 
 
 def CreateHistos(plt, systematics, process, channels, levels):
     global var, hmaster, hperchan, outname, outpath
-    mvascore = plt.GetHistogram('MVAscore')
+    mvascore = plt.GetHistogram('MVAscore_tX')
     #mvascore = plt.GetHistogram('eeta')
     drjj     = plt.GetHistogram('medianDRjj')
     iteration = 0
@@ -104,13 +104,27 @@ def CreateHistos(plt, systematics, process, channels, levels):
             bins     = np.array([(levels.index(l) + channels.index(c)*len(levels))], dtype=np.float64)
             binsChan = np.array([levels.index(l)                                  ], dtype=np.float64)
             # hdamp, UE
-#   to add          hdampup,hdampdo = GetModSystHistos(path, 'TT_hdamp', 'hdamp', var='counts')
-#   when          tuneup , tunedo = GetModSystHistos(path, 'TT_UE',    'UE', var='counts')
-#   having         hdampup_val, hdampup_err = hdampup.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#   them         hdampdo_val, hdampdo_err = hdampdo.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#            tuneup_val , tuneup_err  = tuneup .integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#            tunedo_val , tunedo_err  = tunedo .integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#            dictstaterr = {'hdampUpStatUp' : hdampup_val+np.sqrt(hdampup_err), 'hdampUpStatDown' : hdampup_val-np.sqrt(hdampup_err), 'hdampDownStatUp' : hdampdo_val+np.sqrt(hdampdo_err), 'hdampDownStatDown' : hdampdo_val-np.sqrt(hdampdo_err), 'UEUpStatUp' : tuneup_val+np.sqrt(tuneup_err), 'UEUpStatDown' : tuneup_val-np.sqrt(tuneup_err), 'UEDownStatUp' : tunedo_val+np.sqrt(tunedo_err), 'UEDownStatDown' : tunedo_val-np.sqrt(tunedo_err)}
+            tuneup_top , tunedo_top = GetModSystHistos(path, 'tchannel_UE',    'UE', var='counts')
+            tuneup_tbar , tunedo_tbar = GetModSystHistos(path, 'tbarchannel_UE',    'UE', var='counts')
+            tuneup_val_top , tuneup_err_top  = tuneup_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tuneup_val_tbar , tuneup_err_tbar  = tuneup_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tunedo_val_top, tunedo_err_top  = tunedo_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tunedo_val_tbar, tunedo_err_tbar = tunedo_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tuneup_val=tuneup_val_top+tuneup_val_tbar;tunedo_val=tunedo_val_top+tunedo_val_tbar;
+            tuneup_err=tuneup_err_top+tuneup_err_tbar;tunedo_err=tunedo_err_top+tunedo_err_tbar;
+
+            hdampup_top,hdampdo_top = GetModSystHistos(path, 'tchannel_hdamp', 'hdamp', var='counts')
+            hdampup_tbar,hdampdo_tbar = GetModSystHistos(path, 'tbarchannel_hdamp', 'hdamp', var='counts')
+            hdampup_val_top, hdampup_err_top = hdampup_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            hdampup_val_tbar, hdampup_err_tbar = hdampup_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+           
+            hdampdo_val_top, hdampdo_err_top = hdampdo_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            hdampdo_val_tbar, hdampdo_err_tbar = hdampdo_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            hdampup_val=hdampup_val_top+hdampup_val_tbar;hdampdo_val=hdampdo_val_top+hdampdo_val_tbar;
+            hdampup_err=hdampup_err_top+hdampup_err_tbar;hdampdo_err=hdampdo_err_top+hdampdo_err_tbar;
+
+            dictstaterr = {'UEUpStatUp' : tuneup_val+np.sqrt(tuneup_err), 'UEUpStatDown' : tuneup_val-np.sqrt(tuneup_err), 'UEDownStatUp' : tunedo_val+np.sqrt(tunedo_err), 'UEDownStatDown' : tunedo_val-np.sqrt(tunedo_err),'hdampUpStatUp' : hdampup_val+np.sqrt(hdampup_err), 'hdampUpStatDown' : hdampup_val-np.sqrt(hdampup_err), 'hdampDownStatUp' : hdampdo_val+np.sqrt(hdampdo_err), 'hdampDownStatDown' : hdampdo_val-np.sqrt(hdampdo_err)}
+
             # PDF and scale uncertainties
             pr = 'tchan'; ttSampleName = 'TTPS/'
             pdf_rel   = Get1bPDFUnc(  path+ttSampleName, categories={'sample':processDic['tchan'], 'channel':c, 'level':l}, doPrint=True)
@@ -118,7 +132,7 @@ def CreateHistos(plt, systematics, process, channels, levels):
             nom = counts.integrate('process', pr).integrate('level', l).integrate('channel', c).integrate('syst', 'norm').values()[()][0]
             pdfup = nom*(1 + pdf_rel); pdfdw = nom*(1 - pdf_rel); scaleup = nom*(1 + scale_rel); scaledw = nom*(1 - scale_rel)
             print('pdfup',pdfup)
-            newsyst = {'PDFUp':np.array([pdfup]), 'PDFDown':np.array([pdfdw]), 'ScaleUp':np.array([scaleup]), 'ScaleDown':np.array([scaledw])}#, 'hdampUp':hdampup_val, 'hdampDown':hdampdo_val, 'UEUp':tuneup_val, 'UEDown':tunedo_val}
+            newsyst = {'PDFUp':np.array([pdfup]), 'PDFDown':np.array([pdfdw]), 'ScaleUp':np.array([scaleup]), 'ScaleDown':np.array([scaledw]), 'hdampUp':hdampup_val, 'hdampDown':hdampdo_val, 'UEUp':tuneup_val, 'UEDown':tunedo_val}
             #for syst, sval in (newsyst|dictstaterr).items():  #to be recovered when hdamp and UE are available (as in the just upper line)
             for syst, sval in (newsyst).items():
               hmaster .fill(**{'syst':syst,   'weight':sval, 'process':pr, 'master':bins})
@@ -152,7 +166,7 @@ def DrawMasterHistogram(fname):
     unc_handle = mpatches.Rectangle((0, 0), 1, 1,facecolor='white', hatch="\/\/",label='Unc.',edgecolor='gray')
     all_handles = [unc_handle]+handles 
     all_labels = ['Unc.']+labels             
-    ax.legend(handles[::-1], labels[::-1], loc='upper left', ncol=2, fontsize=13,frameon=True,framealpha=1,facecolor='white',fancybox=False,edgecolor='white')
+    ax.legend(handles[::-1], labels[::-1], loc='upper left', ncol=2, fontsize=12,frameon=True,framealpha=1,facecolor='white',fancybox=False,edgecolor='white')
     # X axis
     #binlabels = ['3j,1b', '3j,$\geq$2b', '4j,1b', '4j,$\geq$2b', '$\geq$5j1b', '$\geq$5j,$\geq$2b'] * 2
     binlabels = ['2j,1b','3j,1b','3j,2b'] * 2
@@ -162,6 +176,7 @@ def DrawMasterHistogram(fname):
     # Labels and lines
     rax.axvline(x=2.5, color=colorchan, linestyle='--')
     ax.axvline(x=2.5, color=colorchan, linestyle='--')
+    #ax.set_ylim(0,350 ) 
     fig.subplots_adjust(right=0.97, top=0.94, bottom=0.13)
     fig.set_size_inches(8, 8)
     ax.text(0.3, 0.70, '$e+$jets', horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=15, color=colorchan)
@@ -359,8 +374,8 @@ def DrawShapesMaser(fname, chan='m', doData=True):
 if __name__ == "__main__":
     fname = outpath + outname + '.pkl.gz'
     if not os.path.exists(fname) or force:
-        plt = plotter(path, prDic=processDic,  bkgList=bkglist, lumi=lumi, var=['counts', 'MVAscore', 'medianDRjj'])
-        RebinVar(plt, 'MVAscore')
+        plt = plotter(path, prDic=processDic,  bkgList=bkglist, lumi=lumi, var=['counts', 'MVAscore_tX', 'medianDRjj'])
+        RebinVar(plt, 'MVAscore_tX')
         RebinVar(plt, 'medianDRjj')
         counts   = plt.GetHistogram(var)
         systematics = [x.name for x in list(counts.identifiers('syst'))]

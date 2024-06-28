@@ -23,11 +23,10 @@ removezeros   = True
 reviewshapes  = True
 
 channels = ['e', 'm']
-levels   = ['3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
-levels = ['2j1b','3j1b','3j2b','2j0b']
-systList = ['muonSF', 'elecSF', 'btagSF','trigSF', 'FSR', 'ISR', 'prefire', 'JER', 'MC',
+levels = ['2j1b','3j1b','3j2b']#,'2j0b']
+systList = ['muonSF', 'elecSF', 'btagSF','trigSF',  'prefire', 'JER', 'MC',
             'AbsStat', 'AbsScale', 'AbsMPF', 'Frag', 'ECAL', 'HCAL', 'Flavor', 'RelStat',
-            'RelPt', 'RelBal', 'RelJER', 'L3Res','MET_UnclusteredEnergy']
+            'RelPt', 'RelBal', 'RelJER', 'L3Res','MET_UnclusteredEnergy','FSR', 'ISR']#,'hdamp','UE']
 #systList = ['muonSF', 'elecSF', 'btagSF','trigSF', 'FSR', 'ISR', 'prefire', 'JER', 'Total','MET_UnclusteredEnergy']
 smoothDict = {}
 for iU in systList:
@@ -147,17 +146,17 @@ def GetModUnc(path, chan, lev):  #This way calculated as flat (different for eac
     scaleDown = histo.integrate('syst', 'ScaleDown').values(overflow='all')[()][nbin]
     scales = (abs(scaleUp-nominal) + abs(scaleDown-nominal))/2/nominal
     # hdamp and UE
-    hdamp  = 0.0001# 0.007
-    UE     = 0.0001 #0.005 #place-holdeers for the time being
-    #pdf    =  0.007
 
-#    tot = sum(histo.integrate('syst', 'norm').values(overflow='all')[()])
-#    hdampUp = sum(histo.integrate('syst', 'hdampUp').values(overflow='all')[()])
-#    hdampDown = sum(histo.integrate('syst', 'hdampDown').values(overflow='all')[()])
-#    hdamp = max(abs(hdampUp-tot), abs(hdampDown-tot))/tot
-#    UEUp = sum(histo.integrate('syst', 'UEUp').values(overflow='all')[()])
-#    UEDown = sum(histo.integrate('syst', 'UEDown').values(overflow='all')[()])
-#    UE = max(abs(UEUp-tot),abs(UEDown-tot))/tot
+    tot = histo.integrate('syst', 'norm').values(overflow='all')[()][nbin+1]
+    hdampUp = histo.integrate('syst', 'hdampUp').values(overflow='all')[()][nbin+1]
+    hdampDown = histo.integrate('syst', 'hdampDown').values(overflow='all')[()][nbin+1]
+    hdamp = max(abs(hdampUp-tot), abs(hdampDown-tot))/tot
+    UEUp = histo.integrate('syst', 'UEUp').values(overflow='all')[()][nbin+1]
+    UEDown = histo.integrate('syst', 'UEDown').values(overflow='all')[()][nbin+1]
+    UE = max(abs(UEUp-tot),abs(UEDown-tot))/tot
+    
+    #hdamp  =  0.0001
+    #UE     = 0.0001    
     return pdf, scales, hdamp, UE
   else:
     print("WARNING: please provide master histograms to take modeling uncertaintes... for now, returning hardcoded values")
@@ -216,9 +215,9 @@ def CreateDatacard(fname, outpath=outpath, oname=output):
   oname = 'dat_' + oname
   if not oname.endswith('.txt'): oname += '.txt'
   
-  lumiUnc  = 0.019
-  bkg      = ['tW', "tt", 'WJets', 'QCD', 'DY']
-  norm     = [0.056, 0.05,   0.2,     0.3,   0.3] #QCD era 0.3        #ESTO LO CAMBIE YO
+  lumiUnc  = 0.019        #
+  bkg      = ['tW', "tt", 'WJetsH','WJetsL', 'QCD', 'DY']
+  norm     = [0.056, 0.05,   0.2, 0.2,  0.3,   0.3] #QCD era 0.3        #ESTO LO CAMBIE YO
   signal   = 'tchan'
   
   bkg, norm = reviewBkgContrib(fname, bkg, norm, chan, lev)
@@ -252,12 +251,13 @@ def CreateDatacard(fname, outpath=outpath, oname=output):
     scales = Get1binScaleUnc(path+ttSampleName, categories={'sample':processDic[signal], 'channel':chan, 'level':lev}, doPrint=False, returnAll=True)
     for i in range(len(scales)):
       d.AddExtraUnc('Scales%d'%(i+1), scales[i], signal)
-  
-  if isnan(hdamp):
-    print("\t- WARNING: while assuming hdamp unc. for ttbar as having only norm. effect in {}-{} region it is found to be NaN! THIS SHOULD NOT HAPPEN AND WILL RESULT IN ISSUES IN COMBINE!".format(chan,lev))
+
+
+#  if isnan(hdamp):
+#    print("\t- WARNING: while assuming hdamp unc. for ttbar as having only norm. effect in {}-{} region it is found to be NaN! THIS SHOULD NOT HAPPEN AND WILL RESULT IN ISSUES IN COMBINE!".format(chan,lev))
   d.AddExtraUnc('hdamp', hdamp, signal)
-  if isnan(UE):
-    print("\t- WARNING: while assuming UE unc. for ttbar as having only norm. effect in {}-{} region it is found to be NaN! THIS SHOULD NOT HAPPEN AND WILL RESULT IN ISSUES IN COMBINE!".format(chan,lev))
+#  if isnan(UE):
+#    print("\t- WARNING: while assuming UE unc. for ttbar as having only norm. effect in {}-{} region it is found to be NaN! THIS SHOULD NOT HAPPEN AND WILL RESULT IN ISSUES IN COMBINE!".format(chan,lev))
   d.AddExtraUnc('UE', UE, signal)
   
   d.SetOutPath(outpath)
