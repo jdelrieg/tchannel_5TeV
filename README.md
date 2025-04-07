@@ -19,10 +19,10 @@ To estimate QCD, you need first to run the QCD MonteCarlo sample. To do so, some
 
 That will give the unique MC shape that is used in every region of the analysis. This file has to be saved in a folder named `QCD_shape/` inside the folder in which we are doing the analysis. After that, the extrapolation factors and total differences have to be extracted. To do so one needs first to run: 
 
-    python analysis/tt5TeV/SaveQCD_charge_auto.py -p histos5TeV/22jan2023/
+    python analysis/tt5TeV/SaveQCD_charge_auto.py -p outpath
 Which will produce a `rates_QCD.json` file inside the path with those factors. To finally build the nominal estimate, the following command has to be run:
 
-    python analysis/tt5TeV/QCD_modifyer_syst_auto.py -p histos5TeV/22jan2023/
+    python analysis/tt5TeV/QCD_modifyer_syst_auto.py -p outpath
 Which read the rates and applies them to the MC QCD sample ran before.
 
 #### Shapes estimate
