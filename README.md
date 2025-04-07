@@ -118,4 +118,12 @@ Finally, the `customImpacts.py` script can be used to produce nicer plots.
 
     
 ### Scan plots
-Specifically, for the scan plots `-g -P 250` is needed
+Use the `scans_fits.py` in the following way: 
+
+    python scans_fits.py -i /nfs/fanae/user/jriego/tchannel5TeV/splitting_tchan_tbar/split_charge_goodJECs_mistag_comb_btagEff/temp_cards/prueba_scan/ -j 12 -g -P 250 -ch e_minus,e_plus,m_minus,m_plus -r 2j1b,3j1b,3j2b -lS -s 0 (-O)
+
+Few notes here:
+- This has to be ran in two steps, first with `-s 0` then with `-s 1`.
+- Add the option `-O` if the unblinded option is the desired one.
+- In the folder with the workspace, it has to be renamed as `combcard_2j1b3j1b3j2b.root` for the script to work.
+- Properly inside the script, there are two places where one or two POIs are defined, depending on which of the fits it is done.
