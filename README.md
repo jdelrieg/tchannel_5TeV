@@ -12,13 +12,11 @@ The config script, `analysis/tt5TeV/config.py` is imported by all the plotting s
 
 ## QCD estimate
 
-To estimate QCD, you need to have run over all the samples and have a folder with all the .pkl.gz files. The script `SaveQCD.py` takes those inputs and creates a `QCD.pkl.gz` file with the QCD estimate. Run the script as:
+To estimate QCD, you need first to run the QCD MonteCarlo sample. To do so, some relaxation in the selection are needed. That is why the `run.py` script hast to point at `tchannel5TeV_QCD_fakerateshape.py` instead to the nominal `tchannel5TeV_charge.py`. After that, just run the analysis in the common way:
 
-    python analysis/tt5TeV/SaveQCD.py -p histos5TeV/16jan2023/ -n 32
+    python analysis/tt5TeV/run.py cafea/json/5TeV/newxsecs/QCD.json -n 64 -j -o QCD_shape
 
-You can draw QCD plots (that is, events with fake electrons and muons) using the `DrawQCD.py` script. For example:
-    
-    python analysis/tt5TeV/DrawQCD.py -p histos5TeV/16jan2023/
+That will give the unique MC shape that is used in every region of the analysis. After that, the extrapolation factors and total differences have to be extracted (for now this is done a little bit 'by hand'). To do so
 
 ## Plotting and tables
 
