@@ -49,7 +49,7 @@ In this case, the relevant paths are directly hardcoded in the script.
 
 ## Master Plot
 
-The final pickle file and the master plots (yields and shapes) are produced with `MasterPlot_charge.py`script. This has to be run before creating the datacards.
+The final pickle file and the master plots (yields and shapes) are produced with `MasterPlot_charge.py`script. This has to be run before creating the datacards. In order for it to work, tchannel and tbarchannel `.pkl` files have to be copied into a folder named `TTPS/` 
 
     python analysis/tt5TeV/MasterPlot_charge.py -p histos5TeV/22jan2023/ -n 64
 
@@ -113,7 +113,7 @@ Depending if one is in the single POI or multiple POI case, there are 4 commands
 (multiple POI case, the 4th commmand may be modified to obtain the plot for the impacts of the other POI)
 
 Again, remove -t -1 if the unblinded results are the desired ones. Also, `--parallel N` controls the number of cores one wants to run over.
-Finally, the customImpacts.py script can be used to produce nicer plots.
+Finally, the `customImpacts.py` script can be used to produce nicer plots.
 
 
     
