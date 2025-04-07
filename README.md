@@ -69,6 +69,7 @@ The uncertainties must be specified in the python `analysis/tt5TeV/CreateDatacar
 
 ## Fit
 
+
 This is divided in several steps and is done using CMSSW software. 
 
 ### Combined card, workspace and fit result
@@ -97,6 +98,24 @@ Remember to quit -t -1 if you want the unblinded results.
 
 ### Impact plots
 
+Depending if one is in the single POI or multiple POI case, there are 4 commands to do:
 
+    combineTool.py -M Impacts -m 125 -d workspace_join.root --doInitialFit --setParameters r_tch=1  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000   -t -1  &> fitOutput_join_2j1b3j1b3j2b.txt
+    combineTool.py -M Impacts -m 125 -d ../workspace_join.root --doFits --setParameters r_tch=1  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000   -t -1  --parallel 60 &> ../fitOutput_join_2j1b3j1b3j2b.txt
+    combineTool.py -M Impacts -m 125 -d ../workspace_join.root  -o impacts.json --setParameters r_tch=1  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000   -t -1  --parallel 60 &> ../fitOutput_join_2j1b3j1b3j2b.txt
+    combineTool.py -M Impacts -m 125 -d ../workspace_join.root  -o impacts.json --setParameters r_tch=1  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000   -t -1  --parallel 60 &> ../fitOutput_join_2j1b3j1b3j2b.txt
+(single POI case), or:
+    
+    combineTool.py -M Impacts -m 125 -d workspace.root --doInitialFit --setParameters r_tchplus=1,r_tchmninus=1 --redefineSignalPOI r_tch,r_tchbar --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000 -t -1 &>fitOutput_2j1b3j1b3j2b.txt
+    combineTool.py -M Impacts -m 125 -d ../workspace.root --doFits --setParameters r_tch=1,r_tchbar=1 --redefineSignalPOI r_tch,r_tchbar  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000   -t -1 --parallel 60 &> ../fitOutput_2j1b3j1b3j2b.txt
+    combineTool.py -M Impacts -m 125 -d ../workspace.root -o impacts.json --setParameters r_tch=1,r_tchbar=1 --redefineSignalPOI r_tch,r_tchbar  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000   -t -1 --parallel 60 &> ../fitOutput_2j1b3j1b3j2b.txt
+    plotImpacts.py -i impacts.json -o impacts_rtbar --POI r_tchbar 
+(multiple POI case, the 4th commmand may be modified to obtain the plot for the impacts of the other POI)
+
+Again, remove -t -1 if the unblinded results are the desired ones. Also, `--parallel N` controls the number of cores one wants to run over.
+Finally, the customImpacts.py script can be used to produce nicer plots.
+
+
+    
 ### Scan plots
 Specifically, for the scan plots `-g -P 250` is needed
