@@ -13,10 +13,10 @@ h = pmaster.GetHistogram('master')
 #h = pmaster.GetHistogram('eeta')
 
 dyields = {}
-process = ['tt', 'tW', 'tchan', 'DY', 'WJets', 'QCD', 'data']
-bkg = ['tt', 'tW', 'tchan', 'DY', 'WJets', 'QCD']
-categories = ['e+2j1b','e+3j1b','e+3j2b','e+2j0b','$\mu+2$j1b','$\mu+3$j1b','$\mu+3$j2b','$\mu+2$j0b']#['e+3j1b', 'e+4j1b', 'e+$\geq5$j1b', 'e+3j$\geq2$b', 'e+4j$\geq2$b', 'e+$\geq5$j$\geq2$b', '$\mu+3$j1b', '$\mu+4$j1b', '$\mu+\geq5$j1b', '$\mu+3$j$\geq2$b', '$\mu+4$j$\geq2$b', '$\mu+\geq5$j$\geq2$b']
-categoriesl = ['$\ell+2$j1b','$\ell+3$j1b','$\ell+3$j2b', '$\ell+2$j0b']#'$\ell+4$j1b', '$\ell+\geq5$j1b', '$\ell+3$j$\geq2$b', '$\ell+4$j$\geq2$b', '$\ell+\geq5$j$\geq2$b']
+process = ['tt', 'tW', 'tchan', 'DY', 'WJetsH','WJetsL', 'QCD', 'data']
+bkg = ['tt', 'tW', 'tchan', 'DY', 'WJetsH','WJetsL', 'QCD']
+categories = ['e+2j1b','e+3j1b','e+3j2b','$\mu+2$j1b','$\mu+3$j1b','$\mu+3$j2b']#['e+3j1b', 'e+4j1b', 'e+$\geq5$j1b', 'e+3j$\geq2$b', 'e+4j$\geq2$b', 'e+$\geq5$j$\geq2$b', '$\mu+3$j1b', '$\mu+4$j1b', '$\mu+\geq5$j1b', '$\mu+3$j$\geq2$b', '$\mu+4$j$\geq2$b', '$\mu+\geq5$j$\geq2$b']
+categoriesl = ['$\ell+2$j1b','$\ell+3$j1b','$\ell+3$j2b']#'$\ell+4$j1b', '$\ell+\geq5$j1b', '$\ell+3$j$\geq2$b', '$\ell+4$j$\geq2$b', '$\ell+\geq5$j$\geq2$b']
 for pr in process:
     vals = h.integrate('process', pr).integrate('syst', 'norm').values(overflow='all')[()]
     vals = vals[:-1]
@@ -25,7 +25,7 @@ for pr in process:
     vals = np.where(vals<0.0, 0.0, vals)
     dyields[pr] = vals
 
-dyields['total'] = dyields['tt'] + dyields['tW'] + dyields['tchan'] + dyields['DY'] + dyields['WJets'] + dyields['QCD']
+dyields['total'] = dyields['tt'] + dyields['tW'] + dyields['tchan'] + dyields['DY'] + dyields['WJetsH'] + dyields['WJetsL'] + dyields['QCD']
 
 
 lyields = {}
@@ -48,6 +48,8 @@ def PrintYields(oname, categories, dic):
   t.line(header); t.sep()
   for pr in bkg:
     l = pr + ' '
+    if pr=="WJetsH":l = "WJets (heavy)" + ' '
+    if pr=="WJetsL":l = "WJets (light)" + ' '
     for v in dic[pr]:
         l += t.vsep() + ' ' + "%1.1f"%v
     t.line(l)

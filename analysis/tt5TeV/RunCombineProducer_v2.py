@@ -3,10 +3,10 @@
 import os
 from config import *
 from multiprocessing import Pool
+import ROOT
 
 
-
-if var is None: var = "MVAscore_pruned"
+if var is None: var = "MVAscore_relaxed_b10"
 
 # "path" es la variable que le damos al coso esti.
 outpath = path + "combineFiles/"
@@ -20,17 +20,18 @@ if not os.path.exists(pathcomb):
     os.makedirs(pathcomb)
 
 #levels   = ['3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
-levels   = ['2j1b','3j1b','3j2b']#,'2j0b']
-channels = ['e','m']
-#channels = ['e']
+levels   = ['2j1b','3j1b','3j2b']#,'2j0b']#,'2j0b']
+#channels = ['e','m']
+channels = ['e_plus','e_minus','m_plus','m_minus']
+
 
 def getDatacard(task):
     ch, level = task
     print("> Canal:", ch, "Nivel:", level)
-    var = "MVAscore_pruned" if level not in ['2j0b'] else "u0eta" #quitar descomentar 
+    var = "MVAscore_relaxed_b10" if level in ['2j1b'] else  "absu0eta"
     outname = "%s_%s_%s.root"%(var, ch, level)
     if not os.path.exists(f"{pathcomb+outname}"):
-        command = "python analysis/tt5TeV/SaveRootfile_conlowess.py -p %s -v %s -l %s -c %s --data"%(path, var, level, ch)
+        command = "python analysis/tt5TeV/SaveRootfile_conlowess.py -p %s -v %s -l %s -c %s --data"%(path, var, level, ch)  
         if verbose >= 1: print("Running: %s"%(command))
         os.system(command)
 
@@ -59,3 +60,8 @@ else:
     pool.close()
     pool.join()
 print('\n### Datacards created in ', pathcomb, "\n")
+
+
+
+
+

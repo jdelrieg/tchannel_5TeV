@@ -9,7 +9,7 @@ from PDFscaleUncertainties import Get1binScaleUnc, Get1bPDFUnc
 import matplotlib.pyplot as matplt
 import matplotlib
 
-channels = ['e', 'm']
+channels = ['e_plus','e_minus', 'm_plus','m_minus']
 #levels = ['3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
 levels = ['2j1b','3j1b','3j2b','2j0b']#['3j1b', '4j1b', 'g5j1b', '3j2b', '4j2b', 'g5j2b']
 var = "counts"
@@ -34,7 +34,7 @@ hperchan = hist.Hist("Events", hist.Cat("process", "process"), hist.Cat('syst', 
 
 def CreateHistos(plt, systematics, process, channels, levels):
     global var, hmaster, hperchan, outname, outpath
-    mvascore = plt.GetHistogram('MVAscore')
+    mvascore = plt.GetHistogram('MVAscore_relaxed_b10_all')
     #mvascore = plt.GetHistogram('eeta')
     drjj     = plt.GetHistogram('medianDRjj')
     u0et     = plt.GetHistogram('u0eta')
@@ -51,13 +51,13 @@ def CreateHistos(plt, systematics, process, channels, levels):
                 #bin0  = (5+7*(levels.index(l) - 1)) if l != '3j1b' else 0
                 binshape = np.linspace(bin0, bin0 + nbins -1, nbins, dtype=np.float64)
                 for s in systematics:
-                    print("\r[{:<100}] {:.2f} % ".format('#' * int( float(iteration)/total*100), float(iteration)/total*100),end='')
+                #    print("\r[{:<100}] {:.2f} % ".format('#' * int( float(iteration)/total*100), float(iteration)/total*100),end='')
                     iteration += 1
                     # Counts
                     h = counts.integrate('process', pr).integrate('level', l).integrate('channel', c).integrate('syst', s)
                     hshap = mvascore.integrate('process', pr).integrate('level', l).integrate('channel', c).integrate('syst', s) if l in ['2j1b','3j1b','3j2b'] else u0et.integrate('process', pr).integrate('level', l).integrate('channel', c).integrate('syst', s)
-                   # print('channel',c,'lvel',l,'process',pr)
-                    print(hshap.values())
+                #    print('channel',c,'lvel',l,'process',pr)
+                #    print(hshap.values())
                     if h.values() == {}: continue
                     _, vals, staterr = GetXYfromH1D(h, axis=var, mode='centers', errors=True, overflow=False)
                     if hshap.values() == {}: 
@@ -87,10 +87,10 @@ def CreateHistos(plt, systematics, process, channels, levels):
                         vshap_data = np.array(vshap_data, dtype=np.float64)
                         hdists  .fill(**{'syst':s, 'weight':vshap_data, 'process':pr, 'shapes':binshape_data, 'channel':c})
                     else:
-                      #  print(s,'\n',vshap,'\n',pr,'\n',binshape,'\n',c)
-                      #  print('')
+                    #    print(s,'\n',vshap,'\n',pr,'\n',binshape,'\n',c)
+                    #    print('')
                         hdists  .fill(**{'syst':s, 'weight':vshap, 'process':pr, 'shapes':binshape, 'channel':c})
-                      #  print('hdist tras fill',hdists.values())
+                    #    print('hdist tras fill',hdists.values())
                     if s == 'norm': # Fill stat unc
                         statUp = vals + staterr
                         statDn = vals - staterr
@@ -105,28 +105,53 @@ def CreateHistos(plt, systematics, process, channels, levels):
             bins     = np.array([(levels.index(l) + channels.index(c)*len(levels))], dtype=np.float64)
             binsChan = np.array([levels.index(l)                                  ], dtype=np.float64)
             # hdamp, UE
-#   to add          hdampup,hdampdo = GetModSystHistos(path, 'TT_hdamp', 'hdamp', var='counts')
-#   when          tuneup , tunedo = GetModSystHistos(path, 'TT_UE',    'UE', var='counts')
-#   having         hdampup_val, hdampup_err = hdampup.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#   them         hdampdo_val, hdampdo_err = hdampdo.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#            tuneup_val , tuneup_err  = tuneup .integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#            tunedo_val , tunedo_err  = tunedo .integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
-#            dictstaterr = {'hdampUpStatUp' : hdampup_val+np.sqrt(hdampup_err), 'hdampUpStatDown' : hdampup_val-np.sqrt(hdampup_err), 'hdampDownStatUp' : hdampdo_val+np.sqrt(hdampdo_err), 'hdampDownStatDown' : hdampdo_val-np.sqrt(hdampdo_err), 'UEUpStatUp' : tuneup_val+np.sqrt(tuneup_err), 'UEUpStatDown' : tuneup_val-np.sqrt(tuneup_err), 'UEDownStatUp' : tunedo_val+np.sqrt(tunedo_err), 'UEDownStatDown' : tunedo_val-np.sqrt(tunedo_err)}
+
+            tuneup_top , tunedo_top = GetModSystHistos(path, 'tchannel_UE',    'UE', var='counts')
+            tuneup_tbar , tunedo_tbar = GetModSystHistos(path, 'tbarchannel_UE',    'UE', var='counts')
+            tuneup_val_top , tuneup_err_top  = tuneup_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tuneup_val_tbar , tuneup_err_tbar  = tuneup_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tunedo_val_top, tunedo_err_top  = tunedo_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tunedo_val_tbar, tunedo_err_tbar = tunedo_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            tuneup_val=tuneup_val_top+tuneup_val_tbar;tunedo_val=tunedo_val_top+tunedo_val_tbar;
+            tuneup_err=tuneup_err_top+tuneup_err_tbar;tunedo_err=tunedo_err_top+tunedo_err_tbar;
+
+            hdampup_top,hdampdo_top = GetModSystHistos(path, 'tchannel_hdamp', 'hdamp', var='counts')
+            hdampup_tbar,hdampdo_tbar = GetModSystHistos(path, 'tbarchannel_hdamp', 'hdamp', var='counts')
+            hdampup_val_top, hdampup_err_top = hdampup_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            hdampup_val_tbar, hdampup_err_tbar = hdampup_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+           
+            hdampdo_val_top, hdampdo_err_top = hdampdo_top.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            hdampdo_val_tbar, hdampdo_err_tbar = hdampdo_tbar.integrate('process').integrate('level', l).integrate('channel', c).integrate('syst').values(overflow='none', sumw2=True)[()]
+            hdampup_val=hdampup_val_top+hdampup_val_tbar;hdampdo_val=hdampdo_val_top+hdampdo_val_tbar;
+            hdampup_err=hdampup_err_top+hdampup_err_tbar;hdampdo_err=hdampdo_err_top+hdampdo_err_tbar;
+
+            dictstaterr = {'UEUpStatUp' : tuneup_val+np.sqrt(tuneup_err), 'UEUpStatDown' : tuneup_val-np.sqrt(tuneup_err), 'UEDownStatUp' : tunedo_val+np.sqrt(tunedo_err), 'UEDownStatDown' : tunedo_val-np.sqrt(tunedo_err),'hdampUpStatUp' : hdampup_val+np.sqrt(hdampup_err), 'hdampUpStatDown' : hdampup_val-np.sqrt(hdampup_err), 'hdampDownStatUp' : hdampdo_val+np.sqrt(hdampdo_err), 'hdampDownStatDown' : hdampdo_val-np.sqrt(hdampdo_err)}
+
             # PDF and scale uncertainties
-            pr = 'tchan'; ttSampleName = 'TTPS/'
+            pr = 'tchan';pr1='tbarchan'; ttSampleName = 'TTPS/'
             pdf_rel   = Get1bPDFUnc(  path+ttSampleName, categories={'sample':processDic['tchan'], 'channel':c, 'level':l}, doPrint=True)
             scale_rel = Get1binScaleUnc(path+ttSampleName, categories={'sample':processDic['tchan'], 'channel':c, 'level':l}, doPrint=False)
-            print(pr,l,c)
-            print('hola')
             nom = counts.integrate('process', pr).integrate('level', l).integrate('channel', c).integrate('syst', 'norm').values()[()][0]
             pdfup = nom*(1 + pdf_rel); pdfdw = nom*(1 - pdf_rel); scaleup = nom*(1 + scale_rel); scaledw = nom*(1 - scale_rel)
             print('pdfup',pdfup)
-            newsyst = {'PDFUp':np.array([pdfup]), 'PDFDown':np.array([pdfdw]), 'ScaleUp':np.array([scaleup]), 'ScaleDown':np.array([scaledw])}#, 'hdampUp':hdampup_val, 'hdampDown':hdampdo_val, 'UEUp':tuneup_val, 'UEDown':tunedo_val}
-            #for syst, sval in (newsyst|dictstaterr).items():  #to be recovered when hdamp and UE are available (as in the just upper line)
+            newsyst = {'PDFUp':np.array([pdfup]), 'PDFDown':np.array([pdfdw]), 'ScaleUp':np.array([scaleup]), 'ScaleDown':np.array([scaledw]), 'hdampUp':hdampup_val, 'hdampDown':hdampdo_val, 'UEUp':tuneup_val, 'UEDown':tunedo_val}
             for syst, sval in (newsyst).items():
               hmaster .fill(**{'syst':syst,   'weight':sval, 'process':pr, 'master':bins})
               hmastQCD.fill(**{'syst':syst,   'weight':sval, 'process':pr, 'mastQCD':bins})
               hperchan.fill(**{'syst':syst,   'weight':sval, 'process':pr, 'perchan':binsChan, 'channel':c})
+
+            pdf_rel   = Get1bPDFUnc(  path+ttSampleName, categories={'sample':processDic['tbarchan'], 'channel':c, 'level':l}, doPrint=True)
+            scale_rel = Get1binScaleUnc(path+ttSampleName, categories={'sample':processDic['tbarchan'], 'channel':c, 'level':l}, doPrint=False)
+            nom = counts.integrate('process', pr1).integrate('level', l).integrate('channel', c).integrate('syst', 'norm').values()[()][0]
+            pdfup = nom*(1 + pdf_rel); pdfdw = nom*(1 - pdf_rel); scaleup = nom*(1 + scale_rel); scaledw = nom*(1 - scale_rel)
+            print('pdfup',pdfup)
+            newsyst = {'PDFUp':np.array([pdfup]), 'PDFDown':np.array([pdfdw]), 'ScaleUp':np.array([scaleup]), 'ScaleDown':np.array([scaledw]), 'hdampUp':hdampup_val, 'hdampDown':hdampdo_val, 'UEUp':tuneup_val, 'UEDown':tunedo_val}
+
+            #for syst, sval in (newsyst|dictstaterr).items():  #to be recovered when hdamp and UE are available (as in the just upper line)
+            for syst, sval in (newsyst).items():
+              hmaster .fill(**{'syst':syst,   'weight':sval, 'process':pr1, 'master':bins})
+              hmastQCD.fill(**{'syst':syst,   'weight':sval, 'process':pr1, 'mastQCD':bins})
+              hperchan.fill(**{'syst':syst,   'weight':sval, 'process':pr1, 'perchan':binsChan, 'channel':c})
 
              
     print("\r[{:<100}] {:.2f} % ".format('#' * int( float(iteration)/total*100), float(iteration)/total*100))
@@ -163,6 +188,7 @@ def DrawMasterHistogram(fname):
     ax.axvline(x=2.5, color=colorchan, linestyle='--')
     fig.subplots_adjust(right=0.97, top=0.94, bottom=0.13)
     fig.set_size_inches(8, 8)
+    ax.set_ylim(0,350)
     ax.text(0.3, 0.70, '$e+$jets', horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=15, color=colorchan)
     ax.text(0.75, 0.90, '$\mu+$jets', horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=15, color=colorchan)
     for sufix in ['png', 'pdf']: fig.savefig(outpath + outname + '.' + sufix)
@@ -358,8 +384,8 @@ def DrawShapesMaser(fname, chan='m', doData=True):
 if __name__ == "__main__":
     fname = outpath + outname + '.pkl.gz'
     if not os.path.exists(fname) or force:
-        plt = plotter(path, prDic=processDic,  bkgList=bkglist, lumi=lumi, var=['counts', 'MVAscore', 'medianDRjj','u0eta'])
-        RebinVar(plt, 'MVAscore')
+        plt = plotter(path, prDic=processDic,  bkgList=bkglist, lumi=lumi, var=['counts', 'MVAscore_relaxed_b10_all', 'medianDRjj','u0eta'])
+        RebinVar(plt, 'MVAscore_relaxed_b10_all')
         RebinVar(plt, 'medianDRjj')
         counts   = plt.GetHistogram(var)
         systematics = [x.name for x in list(counts.identifiers('syst'))]

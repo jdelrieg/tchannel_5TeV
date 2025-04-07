@@ -127,7 +127,7 @@ if not var is None:
 
 
 else:
-  outpath = '/nfs/fanae/user/juanr/www/public/tt5TeV/ljets/19nov2021_withBtagSF/'
+  outpath = '/nfs/fanae/user/jriego/'
   doData = True
   #Print2lplots()
   Print1lplots()

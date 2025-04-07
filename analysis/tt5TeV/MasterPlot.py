@@ -173,6 +173,7 @@ def DrawMasterHistogram(fname):
     rax.set_xticks(np.arange(0, len(binlabels)))
     rax.set_xticklabels(binlabels, rotation=90)
     rax.set_xlabel('')
+    ax.set_xlabel(None)
     # Labels and lines
     rax.axvline(x=2.5, color=colorchan, linestyle='--')
     ax.axvline(x=2.5, color=colorchan, linestyle='--')

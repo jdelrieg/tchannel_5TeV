@@ -14,6 +14,21 @@ from coffea.hist import plot, Hist
 from cycler import cycler
 from cafea.plotter.OutText import OutText
 from cafea.plotter.Uncertainties import *
+import scipy.stats as stats
+import inspect
+
+
+def poisson_errors(N, cl=0.6827):  
+    """Compute Poisson confidence intervals for an array of counts N."""
+    N = np.asarray(N)  # Ensure it's an array
+    low = 0.5 * stats.chi2.ppf((1 - cl) / 2, 2 * N)
+    high = 0.5 * stats.chi2.ppf(1 - (1 - cl) / 2, 2 * (N + 1))
+    
+    # Handle special cases for zero entries
+    low[N == 0] = 0  # Lower error is 0 when N=0
+    high[N == 0] = 0.5 * stats.chi2.ppf(1 - (1 - cl) / 2, 2)  # Upper error for N=0
+
+    return np.nan_to_num(N - low), np.nan_to_num(high - N)
 
 def StackOverUnderflow(v, overflow):
   if overflow=='all':
@@ -31,7 +46,7 @@ def loadHistos(path, hname=None):
   if isinstance(path, str) and os.path.isdir(path):
     pathlist = []
     for f in os.listdir(path):
-      if f.endswith('pkl.gz'): pathlist.append(path + '/' + f)
+      if f.endswith('pkl.gz'): pathlist.append(path + '/' + f);
     path = pathlist
   if not isinstance(path, list): path = path.replace(' ', '').split() if ',' in path else [path]
   hists = {}
@@ -532,7 +547,7 @@ def DrawComp(histos, colors='k', axis='', title='', labels=None, xtit=None, ytit
 
 def DrawEff2D(h, xaxis, error=None, error2=None, xtit='', ytit='', tit='', outname='temp.png'):
   ''' Draw 2D histograms with scale factors from data and MC histograms with numerator and denominator '''
-  fig, ax = plt.subplots(1, 1, figsize=(7,7))
+  fig, ax = plt.subplots(1, 1, figsize=(10,10))
   hist.plot2d(h, xaxis, ax, patch_opts={'cmap':'bwr'})
   values = h.values()[()];
   yaxis = h.axes()[0].name
@@ -774,6 +789,7 @@ class plotter:
       with gzip.open(path) as fin:
         hin = pickle.load(fin)
         for k in hin.keys():
+          #if k in ['mlb','mjj','ht_atlas','deltaeta','mub']: continue
           if not isinstance(hin[k], coffea.hist.Hist):
             self.other[name][k] = hin[k] 
             continue
@@ -1033,10 +1049,10 @@ class plotter:
 ########################################################################################## 
     syst.append('normalization') #Added by hand
     syst.append('lumi')
-    syst.append('pdfs')
-    syst.append('scales')
-    syst.append('hdamp')							#These lines are added to input manually uncs. Remove if not needed
-    syst.append('UE')
+#    syst.append('pdfs')
+#    syst.append('scales')
+#    syst.append('hdamp')							#These lines are added to input manually uncs. Remove if not needed
+#    syst.append('UE')
     syst.append('stat')
     hforstat=copy.deepcopy(h)
     hforstat.scale(1/self.lumi*self.MCnorm)
@@ -1052,8 +1068,15 @@ class plotter:
       self.uncertainties.AddProcess(hbnom, bkg, norm = NormUncDict[bkg] if NormUncDict is not None and bkg in NormUncDict else None)
       
 ##########################							HERE WE DO MANUAL UNCS. COMMENT IF NO TYPICAL PLOTS																							#######      
-      staterrup=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][0]+np.sqrt(hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][1])      #Calculation of statistical uncs of the MC
-      staterrdo=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][0]-np.sqrt(hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][1])
+      #staterrup=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][0]+np.sqrt(hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][1])      #Calculation of statistical uncs of the MC
+      #staterrdo=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][0]-np.sqrt(hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][1])       this lacks the overflow-undeflow while the one below takes
+																																						 #it into account. But as an approximation if smth goes bad you can go back
+																																						 #to this two lines instead of the 4 below
+
+      nominal=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][0];nominal_over=hforstat.values(overflow='all', sumw2=True)[(bkg,'norm')][0];pesos=hforstat.values(overflow='none', sumw2=True)[(bkg,'norm')][1];pesos_over=hforstat.values(overflow='all', sumw2=True)[(bkg,'norm')][1];
+      nominal[0]=nominal[0]+nominal_over[0];nominal[-1]=nominal[-1]+nominal_over[-1];pesos[0]=pesos[0]+pesos_over[0];pesos[-1]=pesos[-1]+pesos_over[-1];
+      staterrup=nominal+np.sqrt(pesos)
+      staterrdo=nominal-np.sqrt(pesos)
       
       staterrup=staterrup*self.lumi*self.MCnorm
       staterrdo=staterrdo*self.lumi*self.MCnorm
@@ -1161,10 +1184,17 @@ class plotter:
         if htempup.values() == {} or htempdo.values() == {}: continue
         htempup.scale(self.lumi)
         htempdo.scale(self.lumi)
+        #if s=='btagSFlight':placeholderup0=htempup.values()[()][0];placeholderup1=htempup.values()[()][-1];placeholderdo0=htempdo.values()[()][0];placeholderdo1=htempdo.values()[()][-1]
+        #if s=='btagSFlight':print('antes',htempup.values()[()])
         htempup._sumw[()][1]=abs(htempup._sumw[()][1])+abs(htempup._sumw[()][0])
         htempup._sumw[()][-3]=abs(htempup._sumw[()][-3])+abs(htempup._sumw[()][-2])
         htempdo._sumw[()][1]=abs(htempdo._sumw[()][1])+abs(htempdo._sumw[()][0])
         htempdo._sumw[()][-3]=abs(htempdo._sumw[()][-3])+abs(htempdo._sumw[()][-2])
+        #if s=='btagSFlight':print('channel',channel,'\n process',pr,'\n systematic',s,'\n up',htempup.values(),'\n norm',hnorm.values())
+        #if s=='btagSFlight':htempup.values()[()][()][0]=placeholderup0;htempup.values()[()][()][-1]=placeholderup1;htempdo.values()[()][()][0]=placeholderdo0;htempdo.values()[()][()][-1]=placeholderdo1;
+        #if s=='btagSFlight':print('\n up after',htempup.values())
+        #if s=='btagSFlight':htempup.values()[()][()][1:-1]=hnorm.values()[(pr,)][()][1:-1]*302+(htempup.values()[()][()][1:-1]-hnorm.values()[(pr,)][()][1:-1]*302)*2;
+        #if s=='btagSFlight':htempdo.values()[()][()][1:-1]=hnorm.values()[(pr,)][()][1:-1]*302-(hnorm.values()[(pr,)][()][1:-1]*302-htempdo.values()[()][()][1:-1])*2
         fout["%s_%sUp"  %(pr, s)] = hist.export1d(htempup)
         fout["%s_%sDown"%(pr, s)] = hist.export1d(htempdo)
     if self.verbose: print('Created file: ', out)
@@ -1385,6 +1415,7 @@ class plotter:
     #PrintHisto(h)  self.bkglist[::-1]   
 #    hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=['tchan','tt', 'tW','WJets', 'DY', 'QCD'][::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
     hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
+    #print('MC',h.values(),'\n total',h.values()[('tt',)]+h.values()[('tW',)]+h.values()[('tchan',)]+h.values()[('WJetsH',)]+h.values()[('WJetsL',)]+h.values()[('DY',)]+h.values()[('QCD',)])
 
     ydata = 0; ydatamax = 0
     if self.doData(hname):
@@ -1404,7 +1435,7 @@ class plotter:
 
     ax.autoscale(axis='x', tight=True)
     ax.set_ylim(0,max(ybkgmax*1.1, ydatamax*1.1) )  #tope y
-    ax.set_xlabel(None)
+    ax.set_xlabel(xtit)
     #ax.set_xticks(ticks=[0,0.2,0.3,0.4,0.5,0.6,0.7,0.8,1],labels=[0,0.2,0.3,0.4,0.5,0.6,0.7,0.8,1],fontsize=18)
     ax.tick_params(axis='y',which='both',labelsize=16)
     #ax.axvline(x=185, color='red', linestyle='--')
@@ -1425,7 +1456,7 @@ class plotter:
       unc_handle = mpatches.Rectangle((0, 0), 1, 1,facecolor='white', hatch="\/\/",label='Unc.',edgecolor='gray')
       all_handles = handles + [unc_handle]
       all_labels = labels + ['Unc.']            
-      ax.legend(handles, labels,frameon=False)#,bbox_to_anchor=leg_anchor,loc=leg_loc)  si sale en orden inverso handles[::-1],labels[::-1]
+      ax.legend(handles[::-1], labels[::-1],frameon=False)#,bbox_to_anchor=leg_anchor,loc=leg_loc)  si sale en orden inverso handles[::-1],labels[::-1]
     
     if self.doData(hname) and self.doRatio:
       #hist.plotratio(hData, h.sum("process"), clear=False,ax=rax, error_opts=data_err_opts, denom_fill_opts={}, guide_opts={}, unc='num')
@@ -1450,6 +1481,7 @@ class plotter:
 
     # Draw uncertainty bands
     dictnorm={'tt':0.05,'tW': 0.056,'tchan': 0.0,'WJetsL': 0.2,'WJetsH':0.2,'QCD': 0.3,'DY': 0.3}
+    
     if drawSystBand:
       up, do = self.GetUncertaintiesFromHist(hist=hsyst, syst=self.systList, NormUncDict=dictnorm)
       if self.doData(hname) and self.doRatio:
@@ -1467,6 +1499,7 @@ class plotter:
     if not self.region is None:
       lab = plt.text(0.03, .98, self.region, fontsize=16, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
       ax.set_ylim(0,ax.get_ylim()[1]*1.1)
+    
     
     # Save
     os.system('mkdir -p %s'%self.outpath)
@@ -1603,6 +1636,230 @@ class plotter:
       t.line(line)
       t.sep()
     t.write()
+
+
+  def Stack_2(self, hname,hname1,hname2, xtit='', ytit='', aname=None, dosyst=False, verbose=True, doNotSave=False,chooseunc='type1',channel='er'):
+    ''' prName can be a list of histograms or a dictionary 'histoName : xtit' '''
+    if isinstance(hname, dict):
+      for k in hname: self.Stack(k, hname[k], ytit)
+      return
+    if isinstance(hname, list):
+      for k in hname: self.Stack(k, xtit, ytit)
+      return
+     
+    density = False; binwnorm = None
+    plt.rcParams.update(self.textParams)
+    aname = hname if aname is None else aname
+
+    doData=True
+    doRatio=True
+    if doData and doRatio:
+      fig, (ax, rax) = plt.subplots(2, 1, figsize=(7,7), gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
+      fig.subplots_adjust(hspace=.07)
+    else:
+      fig, ax = plt.subplots(1, 1, figsize=(7,7))#, gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
+      fig.subplots_adjust(hspace=.07)
+      rax = None
+
+    fill_opts  = self.fill_opts
+    error_opts = self.error_opts
+    data_err_opts = self.data_err_opts
+    if not self.doStack:
+      error_opts = None
+      fill_opts  = None
+      
+    h=hname
+    
+    #h = self.GetHistogram(hname, self.bkglist)
+    #h.scale(self.lumi*self.MCnorm)
+#    h=Rebin(h,"mtwnocut",[0,50,100,150,200])#[0,20,50,70,90,110,130,150,170,200])
+    
+#    if xtit=='': xtit = h.axis(aname).label
+#    self.AddExtraBkgToHisto(h)
+    #for bkg in h.identifiers("process"):
+    #  hb = h.integrate("process", bkg).integrate("syst", "norm")
+
+    # Colors
+    from cycler import cycler
+    #print('bkg list = ', self.bkglist)
+    colors = self.GetColors(self.bkglist)
+    #if self.invertStack: 
+    _n = len(h.identifiers('process'))-1
+    colors = colors[_n::-1]
+    ax.set_prop_cycle('color', colors)
+    #if self.invertStack and type(h._axes[0])==hist.hist_tools.Cat:  h._axes[0]._sorted.reverse() 
+
+    # Splitting into syst and nominal if syst exist
+    drawSystBand = False
+    if self.systLabel in [x.name for x in h.axes()] and dosyst:
+      drawSystBand = True
+      hsyst = h.copy()
+      h = h.integrate(self.systLabel, self.systNormLabel)
+#    for bk in h._sumw.keys():
+#      h._sumw[bk]=np.where(h._sumw[bk]<0,0,h._sumw[bk])
+#      h._sumw[bk][1]=abs(h._sumw[bk][1])+abs(h._sumw[bk][0])
+#      h._sumw[bk][-3]=abs(h._sumw[bk][-3])+abs(h._sumw[bk][-2])
+#      print('')
+
+    ybkg = h.integrate("process").values(overflow='all')
+    if ybkg == {}: return #process not found
+    ybkg = ybkg[list(ybkg.keys())[0]]
+    ybkgmax = max(ybkg)
+    if not CheckValuesHistogram(h, {'process': self.bkglist}):
+      if verbose: 
+        print('  > skipping var: ', hname, '...')
+      return
+    #print('h = ', h)
+    #PrintHisto(h)
+    drawSystBand = True
+    hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
+    np.set_printoptions(suppress=True)
+    #print('MC',h.values(),'\n total',h.values()[('tt',)]+h.values()[('tW',)]+h.values()[('tchan',)]+h.values()[('WJetsb',)]+h.values()[('WJetsc',)]+h.values()[('WJetsL',)]+h.values()[('DY',)]+h.values()[('QCD',)])
+
+
+    ydata = 0; ydatamax = 0
+    doData=True
+    if doData:
+      #hData, dataLabel = self.GetData(hname)#, h)
+      dataLabel='Data'
+      hData=hname1['Data']
+#      hData=Rebin(hData,"mtwnocut",[0,50,100,150,200])#[0,20,50,70,90,110,130,150,170,200])
+      '''
+      if self.systLabel in [x.name for x in hData.axes()]:
+        hData = hData.integrate(self.systLabel, self.systNormLabel)
+      hData._sumw[()][1]=hData._sumw[()][1]+hData._sumw[()][0]
+      hData._sumw[()][-3]=hData._sumw[()][-3]+hData._sumw[()][-2]
+      '''
+      hist.plot1d(hData, ax=ax, clear=False,error_opts=data_err_opts,  binwnorm=binwnorm)# This contains the old way of calculating errors (by choosing the error_opts)
+      
+      #New way of calculating errorrs (i realized later this may not be needed. If so, come back here.I think the poissonian_err function is not updated here but in the ratio, so you may have to take a look at that)
+      poissonian_errors=poisson_errors(np.array(hData.values()[('Data',)]))
+      counts=np.array(hData.values()[('Data',)])
+      edges=hData['Data'].axes()[1].edges()
+      centers = 0.5 * (edges[:-1] + edges[1:])
+      asymmetric_errors = [counts - poissonian_errors[0], poissonian_errors[1] - counts]
+      #ax.errorbar(centers, counts, yerr=asymmetric_errors, fmt='o', color='red')         #Activating this plots the new errors calculated in the previous lines
+      #up to here
+      
+      print('data',hData.values())
+      ydata = hData.values(overflow='all')
+      ydata = ydata[list(ydata.keys())[0]]
+      ydatamax = max(ydata)
+
+    ax.autoscale(axis='x', tight=True)
+    ax.set_ylim(0,max(ybkgmax*1.1, ydatamax*1.1) )
+    ax.set_xlabel(xtit)
+    ax.set_ylabel('Events',fontsize=20)
+    ax.tick_params(axis='y',which='both',labelsize=18)
+    ax.tick_params(axis='x',which='both',labelsize=18)
+    
+
+    if self.doLegend:
+      leg_anchor=(1., 1.)
+      leg_loc='upper left'
+      handles, labels = ax.get_legend_handles_labels()
+      if doData:
+        handles = handles[-1:]+handles[:-1][::-1]
+        labels = [dataLabel]+labels[:-1][::-1]
+      if len(self.legendLabels)>0:
+        for k , lab in self.legendLabels.items():
+          if k in labels:
+            labels[labels.index(k)] = lab
+      unc_handle = mpatches.Rectangle((0, 0), 1, 1,facecolor='white', hatch="\/\/",label='Unc.',edgecolor='gray')
+      all_handles = handles + [unc_handle]
+      all_labels = labels + ['Unc.']
+      ax.legend(all_handles, all_labels,frameon=False,fontsize=14,ncol=2)#,bbox_to_anchor=leg_anchor,loc=leg_loc) If reversed, handles[::-1], labels[::-1]
+    
+    if doData and doRatio:
+		
+      #Previous rax error plotter (IN PRINCIPLE	it doesnt take into account non poissonian)
+      #hist.plotratio(hData.integrate('process','Data'), h.sum("process"), clear=False,ax=rax, error_opts=data_err_opts, denom_fill_opts= {'alpha':0, 'color':'none'} if drawSystBand else {}, guide_opts={}, unc='num')
+      
+      #New way of calculating, taking into account that low values cannot be approximated by poisson
+      num_ratio=hData.integrate('process','Data').values()[()]
+      den_ratio=h.sum("process").values()[()]
+      division=np.divide(num_ratio, den_ratio, where=den_ratio> 0, out=np.zeros_like(num_ratio))
+      asymmetric_errors=[(counts+poissonian_errors[1])/den_ratio,(counts-poissonian_errors[0])/den_ratio]
+      
+      e1=asymmetric_errors[0]-division
+      e0=division-asymmetric_errors[1]
+      
+      if channel == 'l_m_post':
+        e1[1]=e0[1]=0;e1[5]=e0[5]=0;e1[14:16]=e0[14:16]=0;e1[22]=e0[22]=0;e1[25:26]=e0[25:26]=0;e1[42:45]=e0[42:45]=0;e1[53:55]=e0[53:55]=0
+      elif channel == 'l_p_post':
+        e1[13]=e0[13]=0;e1[15:16]=e0[15:16]=0;e1[19]=e0[19]=0;e1[23:26]=e0[23:26]=0;e1[40]=e0[40]=0;e1[49]=e0[49]=0
+      elif channel == 'l_m_pre':
+        e1[5]=e0[5]=0;e1[4]=e0[4]=0;e1[14:16]=e0[14:16]=0;e1[22]=e0[22]=0;e1[25:26]=e0[25:26]=0;e1[43:44]=e0[43:44]=0;e1[53:55]=e0[53:55]=0
+      elif channel == 'l_p_pre':
+        e1[13]=e0[13]=0;e1[16]=e0[16]=0;e1[19]=e0[19]=0;e1[23:26]=e0[23:26]=0;e1[29]=e0[29]=0;e1[40]=e0[40]=0;
+      #e1[14:16]=e0[14:16]=0
+      #e1[25:26]=e0[25:26]=0
+      #e1[42:45]=e0[42:45]=0  #Hadrcoding bins that shouldnt appear. Cuidao que esto es feote
+      #e1[53:55]=e0[53:55]=0
+      
+      
+      rax.errorbar(centers, division, yerr=[e1,e0], fmt='o', color='k',elinewidth=1)
+      rax.axhline(y=1, color='k', linestyle='--',linewidth=1)
+      #Up to here the new way
+      
+      
+      rax.set_ylabel(self.yRatioTit)
+      rax.set_ylim(self.ratioRange[0], self.ratioRange[1])
+      rax.tick_params(axis='x',which='both',labelsize=16)
+      rax.tick_params(axis='y',which='both',labelsize=16)
+      if xtit!='' and xtit is not None: rax.set_xlabel(xtit)
+      #rax.set_xlabel(r'$\Delta R_{med}$(j,j)')
+    elif not self.doRatio:
+      ax.set_xlabel(xtit)
+
+    if self.doLogY:
+      ax.set_yscale("log")
+      ax.set_ylim(1,ax.get_ylim()[1]*5)        
+
+    if not self.xRange is None: ax.set_xlim(xRange[0],xRange[1])
+    if not self.yRange is None: ax.set_ylim(yRange[0],yRange[1])
+
+    # Draw uncertainty bands
+    drawSystBand=True
+    if drawSystBand:
+      h2=hname2
+      if chooseunc=='type1':up=h2.values()[('total',)]+h2.values()[('unc',)];do=h2.values()[('total',)]-h2.values()[('unc',)]
+      if chooseunc=='type2':up=h2.values()[('total',)]+h2.values()[('unc2',)];do=h2.values()[('total',)]-h2.values()[('unc2',)]
+
+      if doData and doRatio:
+        r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, ratioax=rax, hatch="\/\/", color="gray")
+        print('up',up,'\n do',do,'\n central',h2.values()[('total',)])
+        #print('up unc',up-(h.values()[('tt',)]+h.values()[('tW',)]+h.values()[('tchan',)]+h.values()[('WJets',)]+h.values()[('DY',)]+h.values()[('QCD',)]),'\n down unc',h.values()[('tt',)]+h.values()[('tW',)]+h.values()[('tchan',)]+h.values()[('WJets',)]+h.values()[('DY',)]+h.values()[('QCD',)]-do,'\n up down sin resta',up,do)
+      
+      else:
+        r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, hatch="\/\/", color="gray")
+
+    # Labels
+    CMS  = plt.text(0., 1., r"$\bf{CMS}$ ", fontsize=25,fontfamily='TeX Gyre Heros',horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes) #Preliminary taba aqui
+    Preliminary =plt.text(0.075, 1., r"$\it{Preliminary}$", fontsize=19,fontfamily='TeX Gyre Heros', horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes) 
+    lumi = plt.text(1., 1., r"%1.0f %s (%s)"%(self.lumi, self.lumiunit, self.sqrts), fontsize=20, horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
+
+    plt.subplots_adjust(left=0.15)
+
+    for lab in self.labels:
+      plt.text(lab['x'], lab['y'], lab['text'], transform=ax.transAxes, **lab['options'])
+
+    if not self.region is None:
+      lab = plt.text(0.5, .92, self.region, fontsize=16, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes) #0.03 for x position
+      #lab = plt.text(0.05, .9, '3j1b', fontsize=16, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes) 
+      #lab = plt.text(0.05, .98, r'$\ell$+jets', fontsize=16, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes) 
+      ax.set_ylim(0,ax.get_ylim()[1]*1.1)
+    
+    # Save
+    os.system('mkdir -p %s'%self.outpath)
+    if self.output is None: self.output = hname
+    if not doNotSave:
+      fig.savefig(os.path.join(self.outpath, self.output+'.png'))
+      fig.savefig(os.path.join(self.outpath, self.output+'.pdf'))
+      if verbose: print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
+      plt.close('all')
+    else: return fig, ax, rax
+    #else: fig.savefig(os.path.join(self.outpath, hname+'_'+'_'.join(self.region.split())+'.png'))
 
 
   '''

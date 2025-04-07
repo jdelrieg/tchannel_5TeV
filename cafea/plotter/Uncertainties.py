@@ -199,6 +199,7 @@ class UncertHisto:
       u, d = self.GetUnc_quad(process, su, relative)
       up.append(self.CheckArray(u)); down.append(self.CheckArray(d))
     up, down = addsyst(self.CheckArray(self.GetNominal(process)), up, down)
+    print('process',process,'\n unc',unc,'\n up',up,'\n down',down)
     return up, down
 
   def GetTotal(self, process, unc=None, relative=False):

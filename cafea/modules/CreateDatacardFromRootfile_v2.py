@@ -3,13 +3,14 @@
 #   python cafea/modules/CreateDatacardFromRootfile.py NBtags.root -s tt -b "tW, WJets, QCD, DY" -l 0.015 --bkgUnc "0.2, 0.2, 0.2, 0.2" -u "lepSF, trigSF, btagSF, FSR, ISR" -o test.dat
 import uproot, os
 import numpy as np
+import awkward as ak
 from coffea import hist, processor
 from cafea.modules.FixNegValuesRoot_v2 import FixNegValuesRoot
 from cafea.modules.applySmoothing      import applySmoothing
 import ROOT as r
 
 class Datacard:
-  def __init__(self, fname, signal='', bkgList=[], lumiUnc=0.0, bkgUnc=[], systList=[], nSpaces=10, outname=None, verbose = True,
+  def __init__(self, fname, signal=[], bkgList=[], lumiUnc=0.0, bkgUnc=[], systList=[], nSpaces=10, outname=None, verbose = True,
                rmNegBins = True, minShapeVar = 1e-5, minNormUnc = 1e-3, tolSymmNorm = 1e-3, defaultZeroVal = 1e-5, tolstatfl = 0.5,
                tolcheck = 0.25, ch = "", lv = "", smoothingDict = None, reviewshapes = True):
     if rmNegBins:
@@ -36,7 +37,8 @@ class Datacard:
     self.minNormUnc  = minNormUnc
     self.tolstatfl   = tolstatfl
     self.tolcheck   = tolcheck
-    self.nBinsReal = self.f.get(signal if signal != "" else bkgList[0]).to_pyroot().GetNbinsX()
+    #self.nBinsReal = self.f.get(signal if signal != "" else bkgList[0]).to_pyroot().GetNbinsX()
+    self.nBinsReal = self.f.get(signal[0]).to_pyroot().GetNbinsX()#
     self.ch = ch
     self.lv = lv
     return
@@ -64,6 +66,7 @@ class Datacard:
     return self.outpath + self.outname
   
   def SetSignal(self, signal):
+    if isinstance(signal, str) and ',' in signal: signal = signal.replace(' ', '').split(',')
     self.signal = signal
 
   def SetBkg(self, bkg):
@@ -92,10 +95,20 @@ class Datacard:
     self.extraUnc[name] = {'process':pr, 'value':val}
 
   def nProcess(self):
-    return len(self.bkg)+1
+    return len(self.bkg)+2#1
 
-  def ProcessList(self):
+  def ProcessList_or(self):
     return [self.signal] + self.bkg
+ 
+  def ProcessList(self):
+    original =[self.signal] + self.bkg
+    flat_list=[]
+    for item in original:
+      if isinstance(item,list):
+        flat_list.extend(item)
+      else:
+        flat_list.append(item)
+    return flat_list
 
   def FixStringSpace(self, s):
     while len(s) < self.nSpaces: s+= ' ' 
@@ -115,7 +128,7 @@ class Datacard:
 
   def AddTxtHeader(self):
     self.AddLine('imax %i number of bins'%self.nBins)
-    self.AddLine('jmax %i processes minus 1'%len(self.bkg))
+    self.AddLine('jmax %i processes minus 2'%(len(self.bkg)+1))
     self.AddLine('kmax * number of nuisance parameters')
     self.AddSep()
     self.AddLine('shapes * %s %s $PROCESS $PROCESS_$SYSTEMATIC'%(self.chName, self.fname.split("/")[-1]))
@@ -191,9 +204,9 @@ class Datacard:
       prstring = []
       isShape  = False
       for ipr in self.ProcessList():
-        if ipr == "QCD":
+        if ipr == "QCD" and syst not in ['QCD_ll','QCD_lh','QCD_hl','QCD_hh','QCD_shape']:
           prstring.append("-")
-          continue
+          continue       
         hnameUp = ipr + '_' + syst + 'Up'
         hnameDo = ipr + '_' + syst + 'Down'
         if hnameUp in self.f and hnameDo in self.f:
@@ -261,7 +274,7 @@ class Datacard:
     self.AddTxtHeader()
     self.AddTxtObs()
     self.AddTxtRates()
-    self.AddLumiUncTxt()
+    #self.AddLumiUncTxt()
     self.AddBkgNormTxt()
     self.AddSystUncTxt()
     self.AddExtraUncTxt()
@@ -284,6 +297,7 @@ class Datacard:
     return sum(vals)
 
   def GetProcessRates(self):
+    print('processList',ak.flatten(self.ProcessList()))
     return ['%1.5f'%(self.Yield(pr)) for pr in self.ProcessList()]
 
   def GetNormUncProcess(self, pr):
@@ -307,6 +321,7 @@ if __name__ == '__main__':
   parser.add_argument('--syst',    '-u', default = [] ,        help = 'List of systematics')
   args = parser.parse_args()
 
+  
   fname = args.path
   signal = args.signal
   bkg = args.bkg

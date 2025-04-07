@@ -7,7 +7,9 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 def Draw(plt, var, level, channel, outname, verbose=True):
   categories =  {'level':level, 'channel':channel}
   label = GetChLab(categories['channel']) + GetLevLab(categories['level']) 
-  if channel == 'l': categories['channel'] = ['e','m']
+  print('por aqui',label)
+  #if channel == 'l': categories['channel'] = ['e','m'] ASI sin separar por carga
+  if channel == 'l': categories['channel'] = ['e_plus','e_minus','m_plus','m_minus']
   plt.SetCategories(categories)
   if not CheckHistoCategories(plt.hists[var], categories): 
     if verbose: print(f'  > Skipping [{var}] cat = ', categories)
@@ -86,6 +88,7 @@ if __name__=="__main__":
   
  
   
+  plt = plotter(path, prDic=processDic_noQCD, bkgList=bkglist_noQCD, colors=colordic, lumi=lumi)
   plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi)
   plt.SetLumi(lumi, "pb$^{-1}$", "5.02 TeV")
   plt.SetRatio(True)
@@ -96,18 +99,18 @@ if __name__=="__main__":
   #baseweb='/nfs/fanae/user/jriego/www/public/tt5TeV/'
  
 
-  outpath = 'mva6_nosyst/Control_Plots_2/'#baseweb+datatoday+'/ControlPlots_nodata/'
+  outpath = 'split_charge_goodJECs_mistag_comb_btagEff/ControlPlots/'#baseweb+datatoday+'/ControlPlots_nodata/'
   print('[Control plots] Output = ', outpath)
   if not os.path.isdir(outpath): os.makedirs(outpath)
   plt.SetOutpath(outpath)
 
   # Analysis var
-  variables_control =['counts','ht','eeta','absu0eta']#ht_mva','fptSumVecAll_mva','leta_mva','j0pt_mva','j0eta_mva','u0eta_mva','ptjj_mva','mjj_mva','medianDRjj_mva','mlb_mva','ptSumVeclb_mva','dRlb_mva','absu0eta_mva','ht_atlas_mva','mtw_mva','beta_mva','deltaeta_mva','topmass_mva','u0mass_mva','topeta_mva','absweta_mva','drub_mva','coste_2_mva','costm_2_mva']#,'coste','costm','absu0eta','metnocut','ept','mpt','b0pt','ht_atlas','u0pt','u0eta','beta','mtw','u0eta','mlb','beta','mtwnocut','met','deltaeta','ht_atlas','eeta','meta','topmass']#,'mtw','met', 'ht', 'mt', 'j0eta', 'j0pt', 'ept', 'eeta', 'mpt', 'meta','ht_atlas','mlb','met_mtw']
+  variables_control =['MVAscore_relaxed_b10']#ht_mva','fptSumVecAll_mva','leta_mva','j0pt_mva','j0eta_mva','u0eta_mva','ptjj_mva','mjj_mva','medianDRjj_mva','mlb_mva','ptSumVeclb_mva','dRlb_mva','absu0eta_mva','ht_atlas_mva','mtw_mva','beta_mva','deltaeta_mva','topmass_mva','u0mass_mva','topeta_mva','absweta_mva','drub_mva','coste_2_mva','costm_2_mva']#,'coste','costm','absu0eta','metnocut','ept','mpt','b0pt','ht_atlas','u0pt','u0eta','beta','mtw','u0eta','mlb','beta','mtwnocut','met','deltaeta','ht_atlas','eeta','meta','topmass']#,'mtw','met', 'ht', 'mt', 'j0eta', 'j0pt', 'ept', 'eeta', 'mpt', 'meta','ht_atlas','mlb','met_mtw']
   variables_MVA     = ['ht', 'j0pt', 'mjj', 'medianDRjj', 'mlb', 'medianDRuu', 'muu', 'dRlb'] 
   variables_extra   = ['st', 'j0eta', 'eeta', 'meta', 'mt', 'u0pt', 'u0eta', 'ptlb', 'sumallpt', 'minDRjj', 'ptuu', 'mjj', 'ptjj']
   mvaVar = "MVAscore"
 
-  systematics = ['btagSF', 'elecSF', 'muonSF', 'prefire','JER','MC', 'AbsStat', 'AbsScale', 'AbsMPF', 'Frag', 'ECAL', 'HCAL', 'Flavor', 'RelStat', 'RelPt', 'RelBal', 'RelJER', 'L3Res','MET_UnclusteredEnergy','ISR', 'FSR']
+  systematics = ['btagSFbc','btagSFlight','elecSF', 'muonSF', 'prefire','JER','MC', 'AbsStat', 'AbsScale', 'AbsMPF', 'Frag', 'ECAL', 'HCAL', 'Flavor', 'RelStat', 'RelPt', 'RelBal', 'RelJER', 'L3Res','MET_UnclusteredEnergy','ISR', 'FSR']
   #systematics = ['btagSF', 'elecSF', 'muonSF', 'prefire','Total','JER','MET_UnclusteredEnergy','ISR', 'FSR']
 
 
@@ -136,9 +139,9 @@ if __name__=="__main__":
     ### Control plots
     #############################################
     #levels = ['g4jets', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
-    levels=['2j1b','3j1b','3j2b','2j0b']#,'2j0b']
-    channels = [ 'e','m']#,'m']# ['lep_pluss','lep_minus']#
-    plt.plotData = False
+    levels=['2j1b','3j1b','3j2b']#,'3j1b','3j2b']#,'2j0b']
+    channels = ['e_minus','e_plus','m_plus','m_minus']# ['lep_pluss','lep_minus']#
+    #plt.plotData = False
     DrawAll(plt, outpath, variables_control, levels, channels, nSlots=nSlots)
 
     ### B-tagging control plots
@@ -157,7 +160,7 @@ if __name__=="__main__":
     levels=['2j1b']
     channels = ['e', 'm'] #['lep_pluss','lep_minus'] #
     #QCDoutpath = baseweb+datatoday+'/QCD/met/'
-    QCDoutpath='selection_met_normal/ControlQCD'
+    #QCDoutpath='selection_met_normal/ControlQCD'
     print('[QCD met plots] Output = ', QCDoutpath)
     if not os.path.isdir(QCDoutpath): os.makedirs(QCDoutpath)
     variables_QCD = ['metnocut']

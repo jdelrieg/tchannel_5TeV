@@ -69,26 +69,27 @@ lumi = 302; # pb
 year = 2017
 
 processDic = {
-  'tchan': 'tbarchannel, tchannel',
+  'tchan':  'tchannel', #tbarchannel',
+  'tbarchan':'tbarchannel',
   'tt': 'ttPS',#, ttPS',
   'tW': 'tbarW, tW',
-  'WJetsL':  'W0_lightjets, W1_lightjets, W2_lightjets, W3_lightjets',
-  'WJetsH':  'W0_heavyjets, W1_heavyjets, W2_heavyjets, W3_heavyjets',
+  'WJetsL':  'W0_lightjets, W1_lightjets, W2_lightjets, W3_lightjets, WJ_lightjets', #
+  'WJetsH':  'W0_heavyjets, W1_heavyjets, W2_heavyjets, W3_heavyjets, WJ_heavyjets', #
   'QCD': 'QCD',
   'DY': 'DYJetsToLLMLL50, DYJetsToLLM10to50',
   'data' : 'SingleMuon, HighEGJet',
 }
-
-diclegendlabels = {'None':'Data', 'tt':'$\\mathrm{t\\bar{t}}$', 'DY':'Drell-Yan','tchan':r'$t$ channel', 'WJetsL':'W+jets (l)','WJetsH':'W+jets (h)', 'QCD':'QCD'}
+																										#
+diclegendlabels = {'None':'Data', 'tt':'$\\mathrm{t\\bar{t}}$', 'DY':'Drell-Yan','tchan':r'$t$ channel','WJetsL':'W+jets (l)', 'WJetsH':'W+jets (h)', 'QCD':'QCD'}
 
 processDic_noQCD = processDic.copy()
 processDic_noQCD.pop('QCD')
 
-
-bkglist    = ['tchan', 'tt', 'tW',  'WJetsL','WJetsH', 'DY', 'QCD']#'tchan', 
-bkglist_noQCD = ['tchan','tt', 'tW',  'WJetsL','WJetsH', 'DY']#'tchan', 
-bkgnormunc = [0.02,0.05, 0.056,  0.2, 0.2, 0.3, 0.3]
-
+								  #
+bkglist    = ['tchan', 'tt', 'tW','WJetsL', 'WJetsH',  'DY', 'QCD']#'tchan', 
+bkglist_noQCD = ['tchan','tt', 'tW','WJetsL',  'WJetsH', 'DY']#'tchan', 
+bkgnormunc = [0.02,0.05, 0.056, 0.2,  0.2, 0.3, 0.3]
+								#
 
 
 colordic ={
@@ -102,17 +103,33 @@ colordic ={
   'QCD' : '#aaaaaa',
 }
 
+colordic ={
+  
+  'tt' : '#BD1F01',
+  'tW' : '#A96B59', 
+  'tchan' :'#FFA90E',
+  'tbarchan' : '#FFA90E',
+  'WJetsL': '#92DADD',
+  'WJetsH':'#3F90DA',  
+  'DY':  '#94A4A2',
+  'QCD' :'#717581',
+}
+
 
 
 colors = [colordic[k] for k in bkglist]
 
 def GetChLab(channel):
+  channel = channel.replace('_plus', '$^{+}$')
+  channel = channel.replace('_minus', '$^{-}$')
   if isinstance(channel, list) and len(channel) > 1:
-    channel = '$\ell$'
+    #channel = '$\ell$'
+    channel = channel[:8]
   elif isinstance(channel, list):
     channel = channel[0]
   if '_fake' in channel: 
-    channel = 'non-iso ' + channel[0]
+    channel = 'non-iso ' + channel[0]+channel[7:]
+    
   channel = channel.replace('m', '$\mu$')
   return channel
 
@@ -128,11 +145,12 @@ def GetLevLab(lev):
   elif lev == 'g5j2b' : return ', $\geq$5j, 2b'
   return lev
 
-def GetModSystHisto(path, fname, systname, var=None, prname='tt', samplab='sample', prlab='process', systlab='syst', systnormlab='norm'):
+def GetModSystHisto(path, fname, systname, var=None, prname='tchan', samplab='sample', prlab='process', systlab='syst', systnormlab='norm'):
   h  = GetHisto(path+ fname +   '.pkl.gz', var, group=None)
   axes = [x.name for x in h.sparse_axes()]
   if not samplab in axes: return
   sampName = h.identifiers(samplab)[0]
+  if 'tbar' in str(sampName): prname='tbarchan'
   h = GroupKeepOrder(h, [[systlab, systlab, {systname:systnormlab}], [samplab, prlab, {prname:sampName}] ])
   return h
 
@@ -140,6 +158,7 @@ def GetModSystHistos(path, fname, systname, var=None):
   up = GetModSystHisto(path, fname+'Up',   systname+'Up', var)
   do = GetModSystHisto(path, fname+'Down', systname+'Down', var)
   return up, do
+
 
 
   #elif var in ['ht']:
@@ -167,7 +186,7 @@ def RebinVar(p, var, level=None):
     b0 = 2;
 #  elif var in ['metnocut']:
 #    b0 = 4;
-  elif var in ['MVAscore','MVAscore_b5','MVAscore_b4','MVAscore_b3','MVAscore_b2','MVAscore_b6']:
+  elif var in ['MVAscore_tX','MVAscore_pruned','MVAscore_relaxed_b10','MVAscore_relaxed_b10_cut','MVAscore_relaxed_b10_all','MVAscore_relaxed_b10_anal','MVAscore_relaxed_b10_25','MVAscore_relaxed_b10_inter']:
     b0 = 0.1; bN = 0.9
     #b0 = 0.4; bN = 1.0
     binRebin = 2

@@ -70,7 +70,7 @@ df_train, df_test = BuildDataset(path, signal, bkg,bkg1, vars_train, trainFrac, 
 print(df_train.sample(n=5))
 ### Create the model
 #name='3j1b_%s_%s_minusvariablesNewMlb_train'%(nest,depth)
-name='var_pruned_bibkg'
+name='dummy_miguel'
 
 #model=DecisionTreeClassifier(max_depth=5, min_samples_split=2, min_samples_leaf=1,class_weight='balanced')
 model = RandomForestClassifier(n_estimators=nest, max_depth=depth,min_samples_split=split,min_samples_leaf=leaf,class_weight='balanced')
@@ -108,8 +108,11 @@ probs_train = model.predict_proba(df_train[vars_train])#predict probability over
 
 
 
+print('dt test label',df_test['label'])
 y_test_bin = label_binarize(df_test['label'], classes=[0, 1, 2]) #This transforms label 0,1 or 2 into [1,0,0],[0,1,0], [0,0,1] respectively
 y_train_bin = label_binarize(df_train['label'], classes=[0, 1, 2]) 
+
+print('y test bin',y_test_bin)
 
 roc_auc=roc_auc_score(y_test_bin,probs,average='weighted')  #Esto debe de ser un tipo de media de las AUCs
 print('sort of mean AUC',roc_auc)

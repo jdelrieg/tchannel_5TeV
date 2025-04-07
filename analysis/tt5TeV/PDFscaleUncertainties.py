@@ -15,17 +15,19 @@ def Get1bPDFUnc(path, categories={}, name='PDF', sample=None, doPrint=False, ret
     else:
       categories['sample'] = sample
 
-#NOTe: the following 7 lines have to be done only if we are dealing with tchan-tbarchan. If not, just do h = GetHisto(path, name, categories)
+#NOTe: the following 7 lines have to be done only if we are dealing with tchan-tbarchan (Joining them). If not, just do h = GetHisto(path, name, categories)
                                                                                                         # bins, values = GetXYfromH1D(h)#, mode='edges')
-  categories['sample']='tchannel'
-  categoriestchan=categories.copy()
-  categories['sample']='tbarchannel'
-  categoriestbarchan=categories.copy()
+#  categories['sample']='tchannel'
+#  categoriestchan=categories.copy()
+#  categories['sample']='tbarchannel'
+#  categoriestbarchan=categories.copy()
   
-  h1 = GetHisto(path, name, categoriestchan)
-  h2 = GetHisto(path, name, categoriestbarchan)
-  h=h1+h2
+#  h1 = GetHisto(path, name, categoriestchan)
+#  h2 = GetHisto(path, name, categoriestbarchan)
+#  h=h1+h2
 
+  
+  h = GetHisto(path, name, categories)
   bins, values = GetXYfromH1D(h)#, mode='edges')
 
   nom = values[0]
@@ -63,18 +65,19 @@ def Get1binScaleUnc(path, categories={}, name='Scales', sample=None, doPrint=Fal
       categories[k] = sample[k]
     else:
       categories['sample'] = sample
-#NOTe: the following 7 lines have to be done only if we are delaing with tchan-tbarchan. If not, just do h = GetHisto(path, name, categories)
+#NOTe: the following 7 lines have to be done only if we are delaing with tchan-tbarchan (Joining them). If not, just do h = GetHisto(path, name, categories)
                                                                                                         # bins, values = GetXYfromH1D(h)#, mode='edges')
-  categories['sample']='tchannel'
-  categoriestchan=categories.copy()
-  categories['sample']='tbarchannel'
-  categoriestbarchan=categories.copy()
+#  categories['sample']='tchannel'
+#  categoriestchan=categories.copy()
+#  categories['sample']='tbarchannel'
+#  categoriestbarchan=categories.copy()
   
-  h1 = GetHisto(path, name, categoriestchan)
-  h2 = GetHisto(path, name, categoriestbarchan)
-  h=h1+h2
+#  h1 = GetHisto(path, name, categoriestchan)
+#  h2 = GetHisto(path, name, categoriestbarchan)
+#  h=h1+h2
 
 
+  h = GetHisto(path, name, categories)
   bins, values = GetXYfromH1D(h)
   muR0p5muF0p5 = values[0]
   muR0p5muF1   = values[1]

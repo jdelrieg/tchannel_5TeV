@@ -14,7 +14,7 @@ from coffea.analysis_tools import PackedSelection
 from coffea.lumi_tools import LumiMask
 
 from cafea.analysis.objects import *
-from cafea.analysis.corrections import SFevaluator, GetBTagSF, jet_factory, jet_factory_data, met_factory, GetBtagEff, AttachMuonSF, AttachElectronSF, AttachPerLeptonFR, GetPUSF
+from cafea.analysis.corrections import SFevaluator, GetBTagSF, jet_factory, jet_factory_data, met_factory, GetBtagEff, AttachMuonSF, AttachElectronSF#, AttachPerLeptonFR, GetPUSF
 from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
 

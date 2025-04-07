@@ -31,17 +31,21 @@ from sklearn.model_selection import HalvingRandomSearchCV
 
 ### Define path, signa, bkg, variables...
 
-path='mva/lesscuts/'
+path='mva/all_stats_fix/'
 signal = "tchannel_mva,tbarchannel_mva"
-bkg = "Wjets_mva,TT_mva"
+bkg="Wjets_mva,TT_mva"
 #bkg1="Wjets_mva"
 
-vars_train = ['2j1b_absu0eta','2j1b_deltaeta','2j1b_topmass','2j1b_mtw','2j1b_mjj','2j1b_medianDRjj']
+vars_train = ['2j1b_absu0eta','2j1b_deltaeta','2j1b_mtw','2j1b_topmass','2j1b_minDRjj','2j1b_mlb']
+#vars_train=['2j1b_ht','2j1b_absu0eta','2j1b_st','2j1b_sumAllPt','2j1b_leta','2j1b_j0pt','2j1b_j0eta','2j1b_u0pt','2j1b_u0eta','2j1b_ptjj','2j1b_mjj','2j1b_medianDRjj','2j1b_minDRjj','2j1b_mlb','2j1b_mt', '2j1b_ptsumveclb',
+#    '2j1b_drlb','2j1b_ht_atlas','2j1b_mtw','2j1b_beta','2j1b_deltaeta','2j1b_topmass','2j1b_u0mass','2j1b_absleta','2j1b_topeta','2j1b_absweta','2j1b_drub','2j1b_cost2',
+#    '2j1b_mub','2j1b_DptWub','2j1b_DphiWub','2j1b_Detalu','2j1b_Detalb','2j1b_DRlu']  FULL LIST
 
-#['2j1b_ht','2j1b_absu0eta','2j1b_st','2j1b_sumAllPt','2j1b_leta','2j1b_j0pt','2j1b_j0eta','2j1b_u0pt','2j1b_u0eta','2j1b_ptjj','2j1b_mjj','2j1b_medianDRjj','2j1b_minDRjj','2j1b_mlb','2j1b_mt', '2j1b_ptsumveclb']
-	#'2j1b_drlb','2j1b_absu0eta','2j1b_ht_atlas','2j1b_mtw','2j1b_beta','2j1b_deltaeta','2j1b_topmass','2j1b_u0mass','2j1b_absleta','2j1b_topeta','2j1b_absweta','2j1b_drub','2j1b_cost2']  FULL LIST
-
-
+#vars_train=['2j1b_absu0eta','2j1b_deltaeta','2j1b_topmass','2j1b_mt','2j1b_medianDRjj','2j1b_mlb','2j1b_mjj','2j1b_mub','2j1b_sumAllPt','2j1b_ht_atlas','2j1b_DptWub','2j1b_DphiWub','2j1b_Detalu']
+vars_train=['2j1b_ht','2j1b_absu0eta','2j1b_st','2j1b_sumAllPt','2j1b_leta','2j1b_j0pt','2j1b_j0eta','2j1b_u0pt','2j1b_u0eta','2j1b_ptjj','2j1b_mjj','2j1b_medianDRjj','2j1b_minDRjj','2j1b_mlb','2j1b_mt', '2j1b_ptsumveclb',
+    '2j1b_drlb','2j1b_ht_atlas','2j1b_mtw','2j1b_beta','2j1b_deltaeta','2j1b_topmass','2j1b_u0mass','2j1b_absleta','2j1b_topeta','2j1b_absweta','2j1b_drub','2j1b_cost2',
+    '2j1b_mub','2j1b_DptWub','2j1b_DphiWub','2j1b_Detalu','2j1b_Detalb','2j1b_DRlu']
+vars_train=['2j1b_absu0eta','2j1b_deltaeta','2j1b_topmass','2j1b_mt','2j1b_medianDRjj','2j1b_mlb','2j1b_mjj','2j1b_mub','2j1b_sumAllPt','2j1b_ht_atlas','2j1b_DptWub','2j1b_DphiWub','2j1b_Detalu']
 
 ### Training parameters
 trainFrac = 0.85
@@ -50,6 +54,15 @@ depth=7
 split=14
 leaf=4              #Values chosen based on halvingrandomsearchcv and manually changing a little to prevent from overfitting
                     #(values given by the grid were: {'n_estimators': 300, 'min_samples_split': 14, 'min_samples_leaf': 2, 'max_depth': 18})
+'''
+trainFrac = 0.85
+nest=300
+depth=10
+split=6				#Esta configuracion es bastante mas overfitted que la de arriba
+leaf=3              #Values chosen based on halvingrandomsearchcv and manually changing a little to prevent from overfitting
+                    #(values given by the grid were: best_params {'n_estimators': 400, 'min_samples_split': 12, 'min_samples_leaf': 1, 'max_depth': 20}
+'''                    
+                                        
 ### Get the data
 '''
 signal = toList(signal); bkg = toList(bkg); vars_train = toList(vars_train)
@@ -65,11 +78,11 @@ df_train_g=pd.concat([X_train,y_train], axis=1)
 df_train=pd.concat([df_train_b,df_train_g],axis=0)
 df_test=pd.concat([df_test_b,df_test_g],axis=0)
 '''
-df_train, df_test = BuildDataset(path, signal, bkg, vars_train, trainFrac, 21,nData=None)#, nData=614) this is the number of Wjets
+df_train, df_test = BuildDataset(path, signal, bkg, vars_train, trainFrac, 21, nData=None)# this is the number of Wjets nData=614)#
 print(df_train.sample(n=5)) 
 ### Create the model
 #name='3j1b_%s_%s_minusvariablesNewMlb_train'%(nest,depth)
-name='best6'
+name='b10'
 
 #model=DecisionTreeClassifier(max_depth=5, min_samples_split=2, min_samples_leaf=1,class_weight='balanced')
 model = RandomForestClassifier(n_estimators=nest, max_depth=depth,min_samples_split=split,min_samples_leaf=leaf,class_weight='balanced')
@@ -78,13 +91,14 @@ model = RandomForestClassifier(n_estimators=nest, max_depth=depth,min_samples_sp
 model.n_jobs=8
 
 
+'''
 #Exploring the best combination of hyperparameters:
-#param_distributions= {"n_estimators":np.linspace(100,500,5).astype(int),
-#                "max_depth":np.linspace(2,20,11).astype(int),
-#                "min_samples_split":np.linspace(2,20,11).astype(int),
-#                "min_samples_leaf":np.linspace(1,10,11).astype(int) }
-
-#model=HalvingRandomSearchCV(model1,param_distributions,verbose=1,random_state=21)
+param_distributions= {"n_estimators":np.linspace(100,500,5).astype(int),
+                "max_depth":np.linspace(2,20,11).astype(int),
+                "min_samples_split":np.linspace(2,20,11).astype(int),
+                "min_samples_leaf":np.linspace(1,10,11).astype(int) }
+'''
+#model=HalvingRandomSearchCV(model1,param_distributions,verbose=1,random_state=21) 
 ### train!
 print('training...')
 model.fit(df_train[vars_train], df_train['label'])                                   #BE CAREFUL, this line must remain even if we dont do the grid search
@@ -122,8 +136,8 @@ plt.xlabel('False Positive Rate')
 plt.legend(loc="lower right")
 plt.grid(True)
 plt.title(r"$\bf{CMS}$", fontsize=20, loc='left')
-plt.savefig('mva/lesscuts/training/%s_ROCcurve_CMS.pdf'%name)
-plt.savefig('mva/lesscuts/training/%s_ROCcurve_CMS.png'%name)
+plt.savefig('mva/all_stats_fix/training/%s_ROCcurve_CMS.pdf'%name)
+plt.savefig('mva/all_stats_fix/training/%s_ROCcurve_CMS.png'%name)
 
 # probabilities
 plt.figure(figsize=(10,5))
@@ -144,8 +158,8 @@ plt.xlim([0, 1])
 plt.xlabel('Event probability of being classified as signal')
 plt.legend(loc="upper left")
 plt.grid(True)
-plt.savefig('mva/lesscuts/training/%s_probs.pdf'%name)
-plt.savefig('mva/lesscuts/training/%s_probs.png'%name)
+plt.savefig('mva/all_stats_fix/training/%s_probs.pdf'%name)
+plt.savefig('mva/all_stats_fix/training/%s_probs.png'%name)
 plt.show()
 
 # ranking
@@ -163,8 +177,8 @@ def mostrar_resultados(y_test, pred_y):
     plt.show()
     print (classification_report(y_test, pred_y))
 mostrar_resultados(df_test['label'], pred_y)
-plt.savefig('mva/lesscuts/training/%s_matrix.pdf'%name)
-plt.savefig('mva/lesscuts/training/%s_matrix.png'%name)
+plt.savefig('mva/all_stats_fix/training/%s_matrix.pdf'%name)
+plt.savefig('mva/all_stats_fix/training/%s_matrix.png'%name)
 
 
 ### Save the model
@@ -172,8 +186,8 @@ plt.savefig('mva/lesscuts/training/%s_matrix.png'%name)
 #joblib.dump(model, 'models/may/%s.joblib'%name) 
 #joblib.dump(model, 'models/may/%s.pkl'%name) 
 import pickle
-pickle.dump(model, open('mva/lesscuts/training/%s_p2v2.pkl'%name, 'wb'),protocol=2) 
-pickle.dump(model, open('mva/lesscuts/training/%s.pkl'%name, 'wb')) 
+pickle.dump(model, open('mva/all_stats_fix/training/%s_p2v2.pkl'%name, 'wb'),protocol=2) 
+pickle.dump(model, open('mva/all_stats_fix/training/%s.pkl'%name, 'wb')) 
 print('models/may/%s_p2v2.pkl'%name)
 
 #sig, bkg = GetSigBkgProb(model, testdl)

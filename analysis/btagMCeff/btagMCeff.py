@@ -30,7 +30,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         'jetpt'  : hist.Hist("Events", hist.Cat("WP", "WP"), hist.Cat("Flav", "Flav"), hist.Bin("pt",  "Jet p_{T} (GeV) ", 25, 0, 800)),
         'jeteta' : hist.Hist("Events", hist.Cat("WP", "WP"), hist.Cat("Flav", "Flav"), hist.Bin("eta", "Jet eta", 35, -4.7, 4.7)), #antes 25, -2.5, 2.5
         'jetpteta' : hist.Hist("Events", hist.Cat("WP", "WP"), hist.Cat("Flav", "Flav"), hist.Bin("pt",  "Jet p_{T} (GeV) ", [25, 30, 60, 120,121]), hist.Bin("abseta", "Jet eta", [0, 1, 1.8,2.4,4.7])),  #antes solo hast 2.4
-        'jetptetaflav' : hist.Hist("Events", hist.Cat("WP", "WP"), hist.Bin("pt",  "Jet p_{T} (GeV) ", [25, 30, 60, 120,121]), hist.Bin("abseta", "Jet eta", [0, 1, 1.8,2.4,4.7]), hist.Bin("flav", "Flavor", [0, 4, 5]) ),
+        'jetptetaflav' : hist.Hist("Events", hist.Cat("WP", "WP"), hist.Bin("pt",  "Jet p_{T} (GeV) ", [25, 30, 60, 120,121]), hist.Bin("abseta", "Jet eta", [0, 1, 1.8,2.4,2.5]), hist.Bin("flav", "Flavor", [0, 4, 5]) ),
+        'jetptetaflav' : hist.Hist("Events", hist.Cat("WP", "WP"), hist.Bin("pt",  "Jet p_{T} (GeV) ", [25, 30, 60, 120]), hist.Bin("abseta", "Jet eta", [0, 1, 1.8,2.5]), hist.Bin("flav", "Flavor", [0, 4, 5]) ),
+        'pileup'  : hist.Hist("Events", hist.Cat("WP", "WP"), hist.Cat("Flav", "Flav"), hist.Bin("pu",  "N_{vtx}", 16, 0, 80)),
+
         })
 
     @property
@@ -58,6 +61,16 @@ class AnalysisProcessor(processor.ProcessorABC):
         e   = events.Electron
         mu  = events.Muon
         j   = events.Jet
+        
+        # Call to pileup
+        PV=events.PV
+        pileup=PV.npvsGood #this gives pile up per event
+        lengths=ak.num(j)
+        expanded = np.hstack([np.full(n, v) for v, n in zip(pileup, lengths)])
+        pileup_mimic_jets = ak.Array(ak.layout.ListOffsetArray64(ak.layout.Index64(np.cumsum([0] + lengths.tolist())), ak.layout.NumpyArray(expanded))) #Coding awkward arrays such that 
+                                                                                                                                                        #we get pu repeated per njets in an event
+        ###### end pu
+
         e["btagDeepB"] = ak.fill_none(e.matched_jet.btagDeepB, -99)
         mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
 
@@ -108,6 +121,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         j['isGood']  = isTightJet(getattr(j, jetptname), j.eta, j.jetId, jetPtCut = 25)
         goodJets = j[(j.isClean)&(j.isGood)]
         njets = ak.num(goodJets)
+        goodPileup=pileup_mimic_jets[(j.isClean)&(j.isGood)]
         ht = ak.sum(goodJets.pt,axis=-1)
         j0 = goodJets[ak.argmax(goodJets.pt,axis=-1,keepdims=True)]
 
@@ -125,7 +139,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         #WP = {'all' : -999., 'loose': 0.0490, 'medium': 0.2783, 'tight': 0.7100}
         #WP = {'all' : -999., 'loose': 0.0521, 'medium': 0.3033, 'tight': 0.7489}
-        WP = {'all' : -999., 'loose': 0.1522 , 'medium': 0.4941, 'tight': 0.8001 } # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
+        WP = {'all' : -999, 'loose': 0.1522 , 'medium': 0.4941, 'tight': 0.8001 } # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
         btagSelection = {}
         for wp, wpvals in WP.items():
           btagSelection[wp] = (goodJets.btagDeepB>wpvals) 
@@ -134,6 +148,14 @@ class AnalysisProcessor(processor.ProcessorABC):
           for wp in WP.keys():
             mask = (flavSelection[jetype])&(btagSelection[wp])
             selectjets = goodJets[mask]
+            
+            #Pileup tricks           
+            selectpileup=ak.mask(goodPileup,mask)
+            pileup=ak.flatten(selectpileup)
+            nones_mask=~ak.is_none(pileup)
+            pileup=pileup[nones_mask]
+            #end of pileup tricks
+            
             pts     = ak.flatten(selectjets.pt)
             etas    = ak.flatten(selectjets.eta)
             absetas = ak.flatten(np.abs(selectjets.eta))
@@ -143,6 +165,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             hout['jeteta'].fill(WP=wp, Flav=jetype,  eta=etas, weight=weights)
             hout['jetpteta'].fill(WP=wp, Flav=jetype,  pt=pts, abseta=absetas, weight=weights)
             hout['jetptetaflav'].fill(WP=wp, pt=pts, abseta=absetas, flav=flavarray, weight=weights)
+            hout['pileup'].fill(WP=wp,Flav=jetype,pu=pileup,weight=weights)
     
         return hout
 

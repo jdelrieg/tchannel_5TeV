@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
   if dotest:
     nchunks = 2
-    chunksize = 10000
+    chunksize = 10
     nworkers = 1
     print('Running a fast test with %i workers, %i chunks of %i events'%(nworkers, nchunks, chunksize))
 

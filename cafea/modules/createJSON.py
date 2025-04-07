@@ -217,8 +217,8 @@ def SplitJson(pathJson, nfiles):
     folder = os.listdir(pathJson)
     jsonfiles = []
     for j in folder:
-      if j.endswith('.json'): fsonfiles.append(j)
-    return SplitJson(fsonfiles, nfiles)
+      if j.endswith('.json'): jsonfiles.append(j)
+    return SplitJson(jsonfiles, nfiles)
   elif isinstance(pathJson, str) and ',' in pathJson:
     pathJson = pathJson.replace(' ', '').split(',')
     return SplitJson(pathJson, nfiles)

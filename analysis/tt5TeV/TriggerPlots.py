@@ -2,8 +2,9 @@ from config import *
 from cafea.plotter.plotter import GetEff
 
 path='cafea/data/triggerSF/5TeV/triggerSFs.pkl.gz'
+path='/nfs/fanae/user/jriego/tchannel5TeV/splitting_tchan_tbar/triggerBiasCheck/bins_correct/'
 
-plot = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=['etatrig', 'pttrig', 'countstrig'])
+plot = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=['etatrig','etatrig_biascheck', 'pttrig', 'countstrig'])
 
 def GetEfficiencies(var, chan, process='data'):
     hnum = plot.GetHistogram(var, categories={'level':'num', 'channel':chan, 'process':process})
@@ -61,9 +62,11 @@ def ReportTriggerEfficiencies(chan='e'):
     print('SF: %.3f +/- %.3f/%.3f' % (SF, SFup-SF, SF-SFdo))
     print('SFandrea: ',ratio, ratio+up, ratio+do)
     
-ReportTriggerEfficiencies('m')
-ReportTriggerEfficiencies('e')
-exit()
+
+    
+#ReportTriggerEfficiencies('m')
+#ReportTriggerEfficiencies('e')
+#exit()
 GetEfficiencies('etatrig', 'm', 'data')
 GetEfficiencies('etatrig', 'm', 'tt')
 GetEfficiencies('etatrig', 'e', 'data')
@@ -74,3 +77,5 @@ DrawEffi('pttrig', 'm', '$p_\mathrm{T}$ (GeV)')
 DrawEffi('etatrig', 'e')
 DrawEffi('pttrig', 'e', '$p_\mathrm{T}$ (GeV)')
 
+DrawEffi('etatrig_biascheck', 'm')
+DrawEffi('etatrig_biascheck', 'e')

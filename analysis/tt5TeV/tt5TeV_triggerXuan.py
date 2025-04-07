@@ -85,12 +85,12 @@ def GetJESMETvar(corrected_jets, met, jetptcut, btagwp, isData, var=''):
     else:
       cleanedJets = getattr(corrected_jets, 'JES_'+var).down
       metpt       = getattr(met, 'JES_'+var).down.pt
-  cleanedJets["isGood"] = isTightJet(getattr(cleanedJets, jetptname), cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
+  cleanedJets["isGood"] = isTightJet(getattr(cleanedJets, jetptname),cleanedJets.eta, cleanedJets.jetId,jetPtCut=jetptcut)#,jetEtaCut=jetetacut)    #in isTightJet we define the etacut
   goodJets = cleanedJets[cleanedJets.isGood]
-  goodJets["isBtag"] = (goodJets.btagDeepB > btagwp)
-  btagSF = np.ones(len(goodJets), dtype=np.float)
-  if not isData: # btag SF
-    btagSF = GetBtagSF5TeV(goodJets.pt, goodJets.eta, goodJets.hadronFlavour, goodJets.isBtag, False)
+  goodJets["isBtag"] = (goodJets.btagDeepB > btagwp) & (abs(goodJets.eta)<2.5)
+  btagSF = np.ones(len(goodJets), dtype=np.float64)
+  #if not isData: # btag SF
+    #btagSF = GetBtagSF5TeV(goodJets.pt, goodJets.eta, goodJets.hadronFlavour, goodJets.isBtag, False)
   return goodJets, metpt, btagSF
 
 def GetNjetNbtagsNujets(jets):
@@ -235,7 +235,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         'counts_metl25': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
 
         'pttrig' : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Bin("pttrig",  "Lepton $p_\mathrm{T}$", 4, 20, 60)),
-        'etatrig': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Bin("etatrig",  "Lepton $\eta$", [0, 1.0, 1.7, 2.4])),#[0, 1.479, 2.4])),
+        'etatrig': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Bin("etatrig",  "Lepton $\eta$", [0, 1.479, 2.4])),#[0, 1.0, 1.7, 2.4]
+        'etatrig_biascheck': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Bin("etatrig_biascheck",  "Lepton $\eta$", [0, 1.479, 2.4])),#[0, 1.479, 2.4])),
         'countstrig': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Bin("countstrig",  "Counts", 1, -1, 2)),
 
         # processor.column_accumulator
@@ -442,7 +443,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         ######### SFs, weights, systematics ##########
         # Btag SF following 1a) in https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagSFMethods 
         if not isData:
-          btagSF, btagSFUp, btagSFDo = GetBtagSF5TeV(goodJets.pt, goodJets.eta, goodJets.hadronFlavour, goodJets.isBtag, True)
+          btagSF, btagSFUp, btagSFDo = GetBtagSF5TeV(events,goodJets.pt, goodJets.eta, goodJets.hadronFlavour, goodJets.isBtag, True) #
 
 
 
@@ -498,7 +499,9 @@ class AnalysisProcessor(processor.ProcessorABC):
               weights_dict[ch_name].add("elecSF", ak.copy(events.sf_e), ak.copy(events.sf_e_hi), ak.copy(events.sf_e_lo))
               weights_dict[ch_name].add("muonSF", ak.copy(events.sf_m), ak.copy(events.sf_m_hi), ak.copy(events.sf_m_lo))
             weights_dict[ch_name].add("trigSF", ak.copy(events.sf_trig), ak.copy(events.sf_trig_hi), ak.copy(events.sf_trig_lo))
-            weights_dict[ch_name].add("btagSF", ak.copy(btagSF), ak.copy(btagSFUp), ak.copy(btagSFDo))
+            weights_dict[ch_name].add("btagSF", ak.copy(btagSF))#, ak.copy(btagSFUp), ak.copy(btagSFDo))
+            weights_dict[ch_name].add("btagSFlight",np.ones_like(events["event"]) , ak.copy(events.btagSFLightUp), ak.copy(events.btagSFLightDo))
+            weights_dict[ch_name].add("btagSFbc",np.ones_like(events["event"]) , ak.copy(events.btagSFbcUp), ak.copy(events.btagSFbcDo))
             weights_dict[ch_name].add("prefire", ak.copy(prefweight), ak.copy(prefweightUp), ak.copy(prefweightDown))
         
      
@@ -516,7 +519,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         systList = ["norm"]
         systJES = ['MC', 'AbsStat', 'AbsScale', 'AbsMPF', 'Frag', 'ECAL', 'HCAL', 'Flavor', 'RelStat', 'RelPt', 'RelBal', 'RelJER', 'L3Res'] if splitJES else ['Total']
         systJets = [x + 'Up' for x in systJES] + [x + 'Down' for x in systJES]
-        if not isData and not isSystSample: systList = systList + ["elecSFUp","elecSFDown", "muonSFUp", "muonSFDown", "btagSFUp", "btagSFDown", "prefireUp", "prefireDown"]+systJets#, "trigSFUp", "trigSFDown"] + systJets
+        if not isData and not isSystSample: systList = systList + ["elecSFUp","elecSFDown", "muonSFUp", "muonSFDown", "btagSFlightUp","btagSFlightDown","btagSFbcUp","btagSFbcDown", "prefireUp", "prefireDown"]+systJets#, "trigSFUp", "trigSFDown"] + systJets
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
         if not doSyst or isData or isSystSample: systList = ["norm"]
 
@@ -567,6 +570,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         trem_m0pt_pass_m = ak.flatten(m0[(events.isem)&(passtrigm)].pt)
         trem_e0pt_pass_em = ak.flatten(e0[(events.isem)].pt)
         trem_e0pt_pass_e = ak.flatten(e0[(events.isem)&(passtrige)].pt)
+
+        trem_e0eta_bias      = np.abs(ak.flatten(e0[(events.isem)].eta))
+        trem_e0eta_pass_bias = np.abs(ak.flatten(e0[(events.isem)&(passtrige)].eta))
+        trem_m0eta_bias      = np.abs(ak.flatten(m0[(events.isem)].eta))
+        trem_m0eta_pass_bias = np.abs(ak.flatten(m0[(events.isem)&(passtrigm)].eta))
+
              
         hout['pttrig'].fill(sample=histAxisName, channel='e', level='den', pttrig=trem_e0pt, weight=np.ones_like(trem_e0pt))
         hout['pttrig'].fill(sample=histAxisName, channel='e', level='num', pttrig=trem_e0pt_pass, weight=np.ones_like(trem_e0pt_pass))
@@ -576,6 +585,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         hout['etatrig'].fill(sample=histAxisName, channel='e', level='num', etatrig=trem_e0eta_pass, weight=np.ones_like(trem_e0eta_pass))
         hout['etatrig'].fill(sample=histAxisName, channel='m', level='den', etatrig=trem_m0eta, weight=np.ones_like(trem_m0eta))
         hout['etatrig'].fill(sample=histAxisName, channel='m', level='num', etatrig=trem_m0eta_pass, weight=np.ones_like(trem_m0eta_pass))
+
+        hout['etatrig_biascheck'].fill(sample=histAxisName, channel='e', level='den', etatrig_biascheck=trem_e0eta_bias, weight=np.ones_like(trem_e0eta_bias))
+        hout['etatrig_biascheck'].fill(sample=histAxisName, channel='e', level='num', etatrig_biascheck=trem_e0eta_pass_bias, weight=np.ones_like(trem_e0eta_pass_bias))
+        hout['etatrig_biascheck'].fill(sample=histAxisName, channel='m', level='den', etatrig_biascheck=trem_m0eta_bias, weight=np.ones_like(trem_m0eta_bias))
+        hout['etatrig_biascheck'].fill(sample=histAxisName, channel='m', level='num', etatrig_biascheck=trem_m0eta_pass_bias, weight=np.ones_like(trem_m0eta_pass_bias))
+
+
         hout['countstrig'].fill(sample=histAxisName, channel='e', level='den', countstrig=np.ones_like(trem_e0pt), weight=np.ones_like(trem_e0pt))
         hout['countstrig'].fill(sample=histAxisName, channel='e', level='num', countstrig=np.ones_like(trem_e0pt_pass), weight=np.ones_like(trem_e0pt_pass))
         hout['countstrig'].fill(sample=histAxisName, channel='m', level='den', countstrig=np.ones_like(trem_m0pt), weight=np.ones_like(trem_m0pt))

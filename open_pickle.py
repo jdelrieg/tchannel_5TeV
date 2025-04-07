@@ -1,13 +1,31 @@
 import pickle
 import gzip
+import copy
+import numpy as np
 
-with gzip.open('/mnt_pool/c3_users/user/jriego/tchannel5TeV/cafea/light_heavy/splitted/W3JetsToLNu.pkl.gz','rb') as file: #/mnt_pool/c3_users/user/acerom/github/tchannel-5TeV/MVA_marcos/
+def save_histograms(histograms, output_path):
+    with gzip.open(output_path, 'wb') as f:
+        pickle.dump(histograms, f)
+
+with gzip.open('/nfs/fanae/user/jriego/tchannel5TeV/splitting_tchan_tbar/ht_low/TTPS_part3.pkl.gz','rb') as file: #
 	loaded_data=pickle.load(file)
-	
+
 '''
-channels=['e','m']
-levels=['2j0b','2j1b','3j1b','3j2b']
+output_file='QCD_2.pkl.gz'
+channels=['e_plus','e_minus','m_plus','m_minus']
+levels=['2j1b','3j1b','3j2b']
 #levels=['3j1b','4j1b','g5j1b','3j2b','4j2b','g5j2b']
+
+
+# Make a copy of the histograms to avoid modifying the original
+modified_hists = copy.deepcopy(loaded_data)
+
+for channel in channels:
+	for level in levels:
+		modified_hists['MVAscore_relaxed_b10'].values()['QCD',channel,level,'norm'][:10]=np.zeros(10);modified_hists['MVAscore_relaxed_b10'].values()['QCD',channel,level,'norm'][-10:]=modified_hists['MVAscore_relaxed_b10'].values()['QCD',channel,level,'norm'][-10:]
+
+save_histograms(modified_hists, output_file)
+
 for ch in channels:
 	for lev in levels:
 		upper=loaded_data['counts'].integrate('syst','QCDUp').values()[('QCD',ch,lev)]
@@ -18,9 +36,10 @@ for ch in channels:
 		print('upper unc in',ch,lev, 'is:',countup)
 		print('down unc in',ch,lev, 'is:',countdown)
 		print('mean unc (value taken to do the plot):',0.5*(countup+countdown))
+		print(ch,lev,'central',central*302,'upper',upper*302,'down',down*302)
 		print('\n','\n')
-'''
-'''
+
+
 channels=['e','m']
 levels=['2j0b','2j1b','3j1b','3j2b']
 #levels=['3j1b','4j1b','g5j1b','3j2b','4j2b','g5j2b']

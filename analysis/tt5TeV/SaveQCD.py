@@ -27,8 +27,7 @@ for var in varlist:
     print(', ', var, end='')
     continue
   variables.append(var)
-print('')
-print('holaa', variables)
+
 # Channels and levels
 print('Getting levels and systematics...')
 channels    = ['e', 'm']
@@ -96,10 +95,10 @@ def GetQCDnorm(chan, level, sys=0):
   mc_metl20      = plt.GetYields(countsData, cat    , pr=bkglist_noQCD, overflow='none')
   data_metl20_fk = plt.GetYields(countsData, catfake, pr='data'       , overflow='none')
   mc_metl20_fk   = plt.GetYields(countsData, catfake, pr=bkglist_noQCD, overflow='none')
-  print('sys',sys)
-  print('data_metl20',data_metl20,'mc_metl20',mc_metl20,'data_metl20_fk',data_metl20_fk,'mc_metl20_fk',mc_metl20_fk)
+  
+  if sys==0:print(chan,level);print('data_metl20',data_metl20,'mc_metl20',mc_metl20,'data_metl20_fk',data_metl20_fk,'mc_metl20_fk',mc_metl20_fk)
   fact = (data_metl20 - mc_metl20)/(data_metl20_fk - mc_metl20_fk)
-  print('fact',fact)
+  if sys==0:print('fact',fact)
   return fact
 
 def NormQCD(hqcd, chan, level):
