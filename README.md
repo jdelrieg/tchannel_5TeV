@@ -12,11 +12,15 @@ The config script, `analysis/tt5TeV/config.py` is imported by all the plotting s
 
 ## QCD estimate
 
+#### Nominal estimate
 To estimate QCD, you need first to run the QCD MonteCarlo sample. To do so, some relaxation in the selection are needed. That is why the `run.py` script hast to point at `tchannel5TeV_QCD_fakerateshape.py` instead to the nominal `tchannel5TeV_charge.py`. After that, just run the analysis in the common way:
 
     python analysis/tt5TeV/run.py cafea/json/5TeV/newxsecs/QCD.json -n 64 -j -o QCD_shape
 
 That will give the unique MC shape that is used in every region of the analysis. After that, the extrapolation factors and total differences have to be extracted (for now this is done a little bit 'by hand'). To do so
+
+#### Shapes estimate
+to be completed
 
 ## Plotting and tables
 
