@@ -1,10 +1,10 @@
 ## Analysis
 
-The main analysis is in `tt5TeV.py`. To run it, use the `run.py` scrip. You need to have json files with the samples. For example, send a job to process tt sample with 
+The main analysis is in `tchannel5TeV_charge.py`. To run it, use the `run.py` scrip. You need to have json files with the samples. For example, send a job to process tt sample with 
 
-    python analysis/tt5TeV/run.py cafea/json/5TeV/poolphedex/TTPS.json -n 64 -j -o TTPS
+    python analysis/tt5TeV/run.py cafea/json/5TeV/newxsecs/TTPS_part0.json -n 64 -j -o TTPS
 
-To execute all the samples, you can use the script `run5TeV.sh`.
+To execute all the samples, you can use the script `run5TeV_tchannel.sh`.
 
 ## The config script
 
@@ -29,7 +29,7 @@ Example:
 
     python analysis/tt5TeV/ControlPlots.py -p histos5TeV/16jan2023/ -n 16
 
- - PlotSystematics.py: Produce systematic plots, including comparisions. By default, it is done for ttbar only.
+ <!-- - PlotSystematics.py: Produce systematic plots, including comparisions. By default, it is done for ttbar only.
 Example:
 
     python analysis/tt5TeV/PlotSystematics.py -p histos5TeV/16jan2023/ 
@@ -38,7 +38,7 @@ Example:
 Example:
 
     python analysis/tt5TeV/DrawTTmodAltSamp.py -p histos5TeV/22jan2023/
-
+-->
 ## MVA plots
 
 MVA plots are produced with several scripts. Some of them are produced with the `ControlPlots.py` script, mentioned above. Training and performance plots are produced with `MVAplots.py` scripts as follows:
@@ -49,13 +49,13 @@ In this case, the relevant paths are directly hardcoded in the script.
 
 ## Master Plot
 
-The final pickle file and the master plots (yields and shapes) are produced with `MasterPlot.py`script. This has to be run before creating the datacards.
+The final pickle file and the master plots (yields and shapes) are produced with `MasterPlot_charge.py`script. This has to be run before creating the datacards.
 
-    python analysis/tt5TeV/MasterPlot.py -p histos5TeV/22jan2023/ -n 64
+    python analysis/tt5TeV/MasterPlot_charge.py -p histos5TeV/22jan2023/ -n 64
 
 The table yields are calculated with:
 
-    python analysis/tt5TeV/PrintYields.py -p histos5TeV/22jan2023/
+    python analysis/tt5TeV/PrintYields_charge.py -p histos5TeV/22jan2023/
 
 ## Datacards
 
