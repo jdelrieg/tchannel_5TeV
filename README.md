@@ -71,15 +71,32 @@ The uncertainties must be specified in the python `analysis/tt5TeV/CreateDatacar
 
 This is divided in several steps and is done using CMSSW software. 
 
-# Fit result  
+### Combined card, workspace and fit result
 
-Script `fitsHelper_tchannel.py`. The following options are needed:
+Script `fitsHelper_tchannel.py` (combined card). The following options are needed:
 
-    -i <path with cards> -ch <channels (typically we will use 'e,m')> -r <regions (typically '2j0b,2j1b,3j1b,3j2b')> //-uD for the first, -O for the two latter if we want observed results
+    -i <path with cards> -ch <channels (typically we will use 'e_minus,e_plus,m_minus,m_plus')> -r <regions (typically '2j1b,3j1b,3j2b')> //-uD for the first, -O for the two latter if we want observed results
 
 Additionally, one can pass:
 
     -V (for verbosity), -j n (number of cores to be used by the machine in which the script will be launched)
 
-# Impact plots
+For the workspace bulding, we may use the `text2workspace.py` script from `Combine`in the following way
+
+    text2workspace.py combcard_2j1b3j1b3j2b.txt -o workspace.root -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO 'map=.*/t.*chan.*:r_tch[1, 0, 6]'
+
+If we want a single POI for t channel and t-bar channel contributions. If one wants two different POIS targetting the two individual contributions, the POI mapping (last input) sould be modified into `--PO 'map=.*/tchan:r_tch[1, 0, 6]' --PO "map=.*/tbarchan:r_tchbar[1, 0, 6]" `
+
+To obtain the fit result, one should use the `FitDiagnostics` (in the single POI case) or the `MultiDimFit` (in the multiple POI case) as follows:
+    
+    combine -M FitDiagnostics  --expectSignal 1 workspace.root  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000   -t -1 &> fitOutput_2j1b3j1b3j2b.txt
+or
+
+    combine -M MultiDimFit workspace.root --setParameters r_tch=1,r_tchbar=1  --robustFit 1 --cminDefaultMinimizerStrategy 0 --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=5000000 --algo singles  -t -1 &> fitOutput_2j1b3j1b3j2b.txt
+Remember to quit -t -1 if you want the unblinded results.
+
+### Impact plots
+
+
+### Scan plots
 Specifically, for the scan plots `-g -P 250` is needed
