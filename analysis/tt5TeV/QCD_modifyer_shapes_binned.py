@@ -4,6 +4,17 @@ import copy
 from coffea.hist import Hist
 import numpy as np
 
+import json
+import argparse
+import os
+
+parser = argparse.ArgumentParser(description="Scale the QCD background.")
+parser.add_argument("-p", "--path", required=True, help="Path to the input files.")
+args = parser.parse_args()
+# Set the path variable
+path = args.path
+
+
 # Function to load the .pkl.gz file
 def load_histograms(file_path):
     with gzip.open(file_path, 'rb') as f:
@@ -17,6 +28,7 @@ def save_histograms(histograms, output_path):
 
 need_to_cut=False
 ########################################## Initialization of factors: driven from Save_QCD. To be incorporated automatized
+'''
 fake_rates={('e_minus','2j1b'):0.4998,
 	('e_plus','2j1b'):0.385,
 	('m_minus','2j1b'):0.121,
@@ -43,8 +55,13 @@ cr_rates={('e_minus','2j1b'):25.317,
 	('m_minus','3j2b'):11.4098,
 	('m_plus','3j2b'):8.183,
 		}
+'''
+with open(path+"rates_QCD.json", "r") as f:
+    rates = json.load(f)
 
-
+# Convert string keys back to tuples
+fake_rates = {eval(k): v for k, v in rates["fake_rates"].items()}
+cr_rates = {eval(k): v for k, v in rates["cr_rates"].items()}
 
 joint_rates={key: fake_rates[key] * cr_rates[key]/302 for key in fake_rates}   #operate both factors  AND divide by lumi. This could be done (to be more rigid in the ordering of operations) when the 'CR factors' are calculated
 
@@ -107,11 +124,16 @@ joint_rates_hl={key: fake_rates_hl[key] * cr_rates[key]/302 for key in fake_rate
 joint_rates_hh={key: fake_rates_hh[key] * cr_rates[key]/302 for key in fake_rates_hh} 
 
 ##############################################################################			Up to here the factors
-
+'''
 input_file="QCD_forEVAN_AN/QCD_splitshape.pkl.gz"            #point to input file (driven from QCD mc after passing the same process as other samples, only difference the relaxation of cuts)
 output_file = "QCD_forEVAN_AN/QCD_splitshape_scaled_2.pkl.gz"
 input_file='split_charge_goodJECs_mistag_comb_btagEff/shaped_QCD/QCD_splitshape_scaled.pkl.gz'
-output_file="QCD_splitshape_scaled.pkl.gz"
+output_file="QCD_splitshape_scaled_bis.pkl.gz"
+'''
+input_file= path+"QCD_shape/QCD_shapes.pkl.gz" 
+outpath=path+"shaped_QCD/"
+output_file = outpath+"QCD_splitshape_scaled.pkl.gz"
+if not os.path.isdir(outpath): os.makedirs(outpath)
 
 # Load the histograms
 hists = load_histograms(input_file)
