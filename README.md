@@ -1,6 +1,6 @@
 ## Analysis
 
-The main analysis is in `tchannel5TeV_charge.py`. To run it, use the `run.py` scrip. You need to have json files with the samples. For example, send a job to process tt sample with 
+The main analysis is in `analysis/tt5TeV/tchannel5TeV_charge.py`. To run it, use the `analysis/tt5TeV/run.py` scrip. You need to have json files with the samples. For example, send a job to process tt sample with 
 
     python analysis/tt5TeV/run.py cafea/json/5TeV/newxsecs/TTPS_part0.json -n 64 -j -s 10000 -o TTPS -p outpath
 
@@ -13,7 +13,7 @@ The config script, `analysis/tt5TeV/config.py` is imported by all the plotting s
 ## QCD estimate
 
 #### Nominal estimate
-To estimate QCD, you need first to run the QCD MonteCarlo sample. To do so, some relaxation in the selection are needed. That is why the `run.py` script hast to point at `tchannel5TeV_QCD_fakerateshape.py` instead to the nominal `tchannel5TeV_charge.py`. After that, just run the analysis in the common way:
+To estimate QCD, you need first to run the QCD MonteCarlo sample. To do so, some relaxation in the selection are needed. That is why the `analysis/tt5TeV/run.py` script hast to point at `analysis/tt5TeV/tchannel5TeV_QCD_fakerateshape.py` instead to the nominal `analysis/tt5TeV/tchannel5TeV_charge.py`. After that, just run the analysis in the common way:
 
     python analysis/tt5TeV/run.py cafea/json/5TeV/newxsecs/QCD.json -n 64 -s 10000 -j -o QCD_shapes -p outpath
 
@@ -23,10 +23,14 @@ That will give the unique MC shape that is used in every region of the analysis.
 Which will produce a `rates_QCD.json` file inside the path with those factors. To finally build the nominal estimate, the following command has to be run:
 
     python analysis/tt5TeV/QCD_modifyer_syst_auto.py -p outpath
-Which read the rates and applies them to the MC QCD sample ran before.
+Which read the rates and applies them to the MC QCD sample ran before and builds the final `QCD.pkl` file.
 
 #### Shapes estimate
-to be completed
+This is the most delicate part in the QCD estimation. First, the full analysis (but for the systematic and QCD samples) has to be run with the `analysis/tt5TeV/tchannel5TeV_fakerates.py` script (has to be defined in `analysis/tt5TeV/run.py`). After that, one can calculate the binned (in lepton pt and eta) fake rates with:
+
+    python analysis/tt5TeV/fakerates_plotter.py -p path_with_tchannel_fakerates
+
+Those FRs (4 for each lepton flavour) should be then manually written in `analysis/tt5TeV/QCD_modifyer_shapes_binned.py`
 
 ## Plotting and tables
 
