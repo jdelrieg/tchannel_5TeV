@@ -30,7 +30,9 @@ This is the most delicate part in the QCD estimation. First, the full analysis (
 
     python analysis/tt5TeV/fakerates_plotter.py -p path_with_tchannel_fakerates
 
-Those FRs (4 for each lepton flavour) should be then manually written in `analysis/tt5TeV/QCD_modifyer_shapes_binned.py`
+Those FRs (4 for each lepton flavour) should be then manually written in `analysis/tt5TeV/QCD_modifyer_shapes_binned.py`, and then the .pkl file with the shapes can be produced by running:
+
+    python analysis/tt5TeV/QCD_modifyer_shapes_binned.py -p outpath
 
 ## Plotting and tables
 
